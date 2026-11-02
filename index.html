@@ -71,7 +71,7 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
   <p class="tagline"><b>Cuplock</b> — Leve igual um copo de papel</p>
 
   <div class="ctas">
-    <a class="btn primary" id="download" href="/download/Cuplock_3.0.0_x64-setup.exe" download>
+    <a class="btn primary" id="download" href="/download/Cuplock_3.2.0_x64-setup.exe" download>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
       Baixar app
     </a>
@@ -102,7 +102,7 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
 (async () => {
   const btn = document.getElementById("download"), meta = document.getElementById("meta");
   const cmp = (a, b) => { const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); return 0; };
-  let version = "3.0.0", size = 1627640, apk = null;
+  let version = "3.2.0", size = 1627640, apk = null;
   const isAndroid = /Android/i.test(navigator.userAgent);
   try {
     const c = window.CUPLOCK_CONFIG;
