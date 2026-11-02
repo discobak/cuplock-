@@ -16,7 +16,9 @@ function pickFile(accept, multiple) {
 }
 async function uploadTo(bucket, file, { maxSide = 0, square = false, keepGif = true } = {}) {
   let blob = file, ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5) || "png", type = file.type;
-  if (maxSide && !(keepGif && file.type === "image/gif")) {
+  const isSvg = /svg/i.test(file.type) || /\.svg$/i.test(file.name);
+  if (isSvg) { ext = "svg"; type = "image/svg+xml"; }
+  if (maxSide && !isSvg && !(keepGif && file.type === "image/gif")) {
     const bmp = await createImageBitmap(file);
     let sx = 0, sy = 0, sw = bmp.width, sh = bmp.height;
     if (square) { const m = Math.min(sw, sh); sx = (sw - m) / 2; sy = (sh - m) / 2; sw = sh = m; }
@@ -32,15 +34,18 @@ async function uploadTo(bucket, file, { maxSide = 0, square = false, keepGif = t
 }
 
 // ---------------------------------------------------------------- foto de perfil / banner
+const IMG_ACCEPT = () => "image/png,image/jpeg,image/webp,image/gif" + (isStaff() ? ",image/svg+xml,.svg" : "");
 async function uploadAvatar() {
-  const [f] = await pickFile("image/png,image/jpeg,image/webp,image/gif"); if (!f) return;
+  const [f] = await pickFile(IMG_ACCEPT()); if (!f) return;
+  if (/svg/i.test(f.type) || /\.svg$/i.test(f.name)) { if (!isStaff()) return toast("SVG é só para a staff."); }
   if (f.size > 4 * 1048576) return toast("Imagem até 4 MB.");
   toast("Enviando foto…");
   try { const url = await uploadTo("avatars", f, { maxSide: 512, square: true }); await saveProfile({ avatar_url: url }); }
   catch (e) { toast(e.message); }
 }
 async function uploadBanner() {
-  const [f] = await pickFile("image/png,image/jpeg,image/webp,image/gif"); if (!f) return;
+  const [f] = await pickFile(IMG_ACCEPT()); if (!f) return;
+  if (/svg/i.test(f.type) || /\.svg$/i.test(f.name)) { if (!isStaff()) return toast("SVG é só para a staff."); }
   if (f.size > 4 * 1048576) return toast("Imagem até 4 MB.");
   toast("Enviando banner…");
   try { const url = await uploadTo("avatars", f, { maxSide: 1400 }); await saveProfile({ banner_url: url }); }
@@ -110,7 +115,22 @@ document.addEventListener("paste", e => {
 // privados do Supabase Realtime ("call:<canal>"), protegidos pelas regras do banco.
 let call = null;
 let inboxCh = null, ringing = null;
-const iceConfig = () => ({ iceServers: [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun.cloudflare.com:3478"] }, ...(window.CUPLOCK_CONFIG?.TURN ? [window.CUPLOCK_CONFIG.TURN] : [])] });
+// STUN descobre o endereço público; TURN retransmite quando a conexão direta é bloqueada
+// (comum em internet com CGNAT, 4G e redes de empresa/faculdade).
+let iceServers = null, iceLoadedAt = 0;
+const BASE_STUN = [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun.cloudflare.com:3478"] }];
+function asList(v) { return !v ? [] : Array.isArray(v) ? v : [v]; }
+function validIce(s) { return s && (typeof s.urls === "string" || Array.isArray(s.urls)) && asList(s.urls).every(u => /^(stun|turns?):/.test(u)); }
+async function loadIceServers(force) {
+  if (!force && iceServers && Date.now() - iceLoadedAt < 30 * 60e3) return iceServers;
+  let saved = [];
+  try { const r = await q(sb.from("app_settings").select("value").eq("key", "turn").maybeSingle()); saved = asList(r?.value); } catch {}
+  iceServers = [...BASE_STUN, ...asList(window.CUPLOCK_CONFIG?.TURN), ...saved].filter(validIce);
+  iceLoadedAt = Date.now();
+  return iceServers;
+}
+const hasTurn = () => (iceServers || []).some(s => asList(s.urls).some(u => /^turns?:/.test(u)));
+const iceConfig = () => ({ iceServers: iceServers || BASE_STUN, iceCandidatePoolSize: 2 });
 const audioConstraints = () => ({ deviceId: S.prefs.micId ? { ideal: S.prefs.micId } : undefined, echoCancellation: S.prefs.echo !== false, noiseSuppression: S.prefs.noise !== false, autoGainControl: S.prefs.agc !== false });
 const videoConstraints = () => ({ deviceId: S.prefs.camId ? { ideal: S.prefs.camId } : undefined, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } });
 function callLabel(cid) {
@@ -132,6 +152,7 @@ function inCallUsers(cid) { return Object.entries(S.online).filter(([, o]) => o.
 async function joinCall(cid, { video = false, ringTo = null } = {}) {
   if (call?.cid === cid) { if (video && !call.cam) toggleCam(); return; }
   if (call) await leaveCall(true);
+  await loadIceServers();
   if (!navigator.mediaDevices?.getUserMedia) return toast("Este dispositivo não suporta chamadas.");
   let local;
   try { local = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints(), video: video ? videoConstraints() : false }); }
@@ -150,8 +171,9 @@ async function joinCall(cid, { video = false, ringTo = null } = {}) {
   startLevelMeter();
   trackPresence(); renderCallUI(); renderChrome(); tone("join");
   if (ringTo) {
+    playRing();
     ring(ringTo, { cid, video });
-    call.ringTimer = setTimeout(() => { if (call?.cid === cid && call.peers.size === 0) { toast("Ninguém atendeu."); leaveCall(); } }, 40000);
+    call.ringTimer = setTimeout(() => { if (call?.cid === cid && call.peers.size === 0) { setInvite(call.inviteId, "missed"); call.inviteId = null; toast("Ninguém atendeu."); leaveCall(); } }, 40000);
   }
 }
 function sig(msg) { call?.ch?.send({ type: "broadcast", event: "sig", payload: { ...msg, from: uid() } }); }
@@ -174,7 +196,7 @@ async function onSignal(m) {
 function currentVideoTrack() { return call?.screen || (call?.cam ? call.local.getVideoTracks()[0] : null) || null; }
 function ensurePeer(id, initiator) {
   if (call.peers.has(id)) return call.peers.get(id);
-  clearTimeout(call.ringTimer);
+  clearTimeout(call.ringTimer); stopRing();
   const pc = new RTCPeerConnection(iceConfig());
   const peer = { id, pc, stream: new MediaStream(), polite: uid() > id, making: false, pendingIce: [], state: {} };
   call.peers.set(id, peer);
@@ -194,13 +216,31 @@ function ensurePeer(id, initiator) {
     try { peer.making = true; await pc.setLocalDescription(); sig({ type: "sdp", to: id, desc: pc.localDescription.toJSON() }); }
     catch (e) { console.warn("negotiation", e); } finally { peer.making = false; }
   };
+  peer.started = Date.now(); peer.restarts = 0;
+  peer.watch = setTimeout(() => checkStuck(peer), 15000);
   pc.onconnectionstatechange = () => {
-    if (pc.connectionState === "failed") pc.restartIce?.();
-    if (pc.connectionState === "connected") sendStateTo(id);
+    const st = pc.connectionState;
+    if (st === "connected") { clearTimeout(peer.watch); peer.warned = false; sendStateTo(id); }
+    if (st === "failed") {
+      if (peer.restarts < 2) { peer.restarts++; pc.restartIce?.(); if (!peer.polite) pc.onnegotiationneeded?.(); }
+      else callFailHint(peer);
+    }
+    if (st === "disconnected") setTimeout(() => { if (pc.connectionState === "disconnected" && peer.restarts < 2) { peer.restarts++; pc.restartIce?.(); } }, 4000);
     renderCallUI();
   };
   renderCallUI();
   return peer;
+}
+function checkStuck(peer) {
+  if (!call || !call.peers.has(peer.id)) return;
+  if (peer.pc.connectionState !== "connected") callFailHint(peer);
+}
+function callFailHint(peer) {
+  if (peer.warned) return; peer.warned = true;
+  const who = dname(S.users[peer.id]);
+  toast(hasTurn()
+    ? `Não deu para conectar com ${who}. Tentando de novo… se continuar, peça para ${who} reiniciar o app.`
+    : `Não deu para conectar com ${who}: a internet de um de vocês bloqueia conexão direta. O OWNER precisa configurar um servidor TURN (Voz e vídeo → Testar conexão).`);
 }
 async function handleSdp(m) {
   const peer = call.peers.get(m.from) || ensurePeer(m.from, false), pc = peer.pc, desc = m.desc;
@@ -234,6 +274,7 @@ function attachRemoteAudio(peer) {
 }
 function dropPeer(id) {
   const p = call?.peers.get(id); if (!p) return;
+  clearTimeout(p.watch);
   try { p.pc.close(); } catch {}
   p.audioEl?.remove(); call.tiles.get(id)?.remove(); call.tiles.delete(id);
   call.peers.delete(id); renderCallUI();
@@ -242,12 +283,12 @@ function dropPeer(id) {
 async function leaveCall(silent) {
   if (!call) return;
   const c = call; call = null;
-  clearTimeout(c.ringTimer);
+  clearTimeout(c.ringTimer); stopRing();
   try { c.ch?.send({ type: "broadcast", event: "sig", payload: { type: "leave", from: uid() } }); } catch {}
   for (const p of c.peers.values()) { try { p.pc.close(); } catch {} p.audioEl?.remove(); }
   c.local.getTracks().forEach(t => t.stop()); c.screen?.stop();
   setTimeout(() => { try { sb.removeChannel(c.ch); } catch {} }, 300);
-  if (c.ringTo) unring(c.ringTo, c.cid);
+  if (c.ringTo && c.inviteId && c.peers.size === 0) unring(c.ringTo, c.cid, c.inviteId);
   if (!silent) tone("leave");
   trackPresence(); renderCallUI(); renderChrome();
 }
@@ -294,38 +335,59 @@ function replaceVideoEverywhere() {
 }
 
 // ---- campainha (DM) ----
+// O convite de chamada é uma linha na tabela call_invites. O banco só deixa o próprio
+// destinatário ver o convite, e o tempo real (postgres_changes) entrega na hora.
 function connectInbox() {
   if (inboxCh) sb.removeChannel(inboxCh);
-  inboxCh = sb.channel("inbox:" + uid(), { config: { private: true } })
-    .on("broadcast", { event: "ring" }, ({ payload }) => onRing(payload))
-    .on("broadcast", { event: "unring" }, ({ payload }) => { if (ringing?.cid === payload?.cid) stopRinging(true); })
-    .on("broadcast", { event: "decline" }, ({ payload }) => { if (call?.cid === payload?.cid && call.peers.size === 0) { toast(`${dname(S.users[payload.from])} recusou a chamada.`); leaveCall(); } })
-    .subscribe();
+  const me = uid();
+  inboxCh = sb.channel("cuplock-calls-" + me)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "call_invites", filter: `callee=eq.${me}` }, p => onRing(p.new))
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "call_invites", filter: `callee=eq.${me}` }, p => {
+      if (ringing?.id === p.new.id && p.new.status !== "ringing") stopRinging(p.new.status === "cancelled" || p.new.status === "missed");
+    })
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "call_invites", filter: `caller=eq.${me}` }, p => {
+      if (call?.inviteId === p.new.id && p.new.status === "declined" && call.peers.size === 0) {
+        stopRing(); toast(`${dname(S.users[p.new.callee])} recusou a chamada.`); leaveCall();
+      }
+    })
+    .subscribe(st => { if (st === "SUBSCRIBED") checkPendingRings(); });
 }
-function sendInbox(to, event, payload) {
-  const ch = sb.channel("inbox:" + to, { config: { private: true } });
-  ch.subscribe(st => {
-    if (st === "SUBSCRIBED") { ch.send({ type: "broadcast", event, payload: { ...payload, from: uid() } }); setTimeout(() => sb.removeChannel(ch), 1500); }
-    else if (st === "CHANNEL_ERROR" || st === "TIMED_OUT") sb.removeChannel(ch);
-  });
+// ao abrir o app (ou reconectar): pega uma chamada que ainda está tocando
+async function checkPendingRings() {
+  try {
+    const since = new Date(Date.now() - 40000).toISOString();
+    const rows = await q(sb.from("call_invites").select("*").eq("callee", uid()).eq("status", "ringing").gte("created_at", since).order("created_at", { ascending: false }).limit(1));
+    if (rows[0]) onRing(rows[0]);
+  } catch {}
 }
-const ring = (to, d) => sendInbox(to, "ring", d);
-const unring = (to, cid) => sendInbox(to, "unring", { cid });
-async function onRing(p) {
-  if (!p?.cid || !p.from || !p.cid.startsWith("dm:") || !p.cid.includes(uid()) || !p.cid.includes(p.from)) return;
-  if (call?.cid === p.cid) return;
-  await ensureUsers([p.from]).catch(() => {});
-  if (S.me?.status === "busy") return sendInbox(p.from, "decline", { cid: p.cid });
-  const u = S.users[p.from];
+async function ring(to, d) {
+  try {
+    const row = await q(sb.from("call_invites").insert({ callee: to, cid: d.cid, video: !!d.video }).select().single());
+    if (call?.cid === d.cid) call.inviteId = row.id;
+  } catch (e) { toast("Não consegui chamar: " + e.message); }
+}
+function setInvite(id, status) { if (id) sb.from("call_invites").update({ status }).eq("id", id).then(() => {}); }
+function unring(to, cid, inviteId, status = "cancelled") { setInvite(inviteId, status); }
+async function onRing(row) {
+  if (!row?.id || row.status !== "ringing" || row.callee !== uid()) return;
+  if (Date.now() - Date.parse(row.created_at) > 45000) return;          // convite velho
+  if (ringing?.id === row.id || call?.cid === row.cid) return;
+  await ensureUsers([row.caller]).catch(() => {});
+  if (S.me?.status === "busy") return setInvite(row.id, "declined");
+  if (call) { toast(`${dname(S.users[row.caller])} está te ligando (você já está em uma call).`); }
+  const u = S.users[row.caller];
   stopRinging();
-  ringing = { ...p, timer: setTimeout(() => stopRinging(true), 40000), osc: startRingtone() };
-  const box = Object.assign(document.createElement("div"), { className: "incoming" });
+  ringing = { id: row.id, from: row.caller, cid: row.cid, video: row.video, timer: setTimeout(() => { setInvite(row.id, "missed"); stopRinging(true); }, 40000), osc: startRingtone() };
+  const box = Object.assign(document.createElement("div"), { className: "incoming-bg" });
   box.id = "incoming";
-  box.innerHTML = `<div class="ring-av">${avatar(u, "xl", false)}</div><b>${esc(dname(u))}</b><span class="muted small">${p.video ? "Chamada de vídeo" : "Chamada de voz"}…</span>
-    <div style="display:flex;gap:10px;margin-top:12px"><button class="cbtn danger" title="Recusar" onclick="declineRing()">${CI.hang}</button>
-    <button class="cbtn ok" title="Atender com voz" onclick="acceptRing(false)">${CI.phone}</button><button class="cbtn ok" title="Atender com vídeo" onclick="acceptRing(true)">${CI.cam}</button></div>`;
+  box.innerHTML = `<div class="incoming"><div class="ring-av">${avatar(u, "xl", false)}</div>
+    <small class="muted" style="letter-spacing:.08em;font-weight:800;text-transform:uppercase">${row.video ? "📹 Chamada de vídeo" : "📞 Chamada de voz"}</small>
+    <b style="font-size:22px">${uname(u)}</b><span class="muted small">está te ligando…</span>
+    <div style="display:flex;gap:16px;margin-top:18px"><button class="cbtn danger big" title="Recusar" onclick="declineRing()">${CI.hang}</button>
+    <button class="cbtn ok big" title="Atender com voz" onclick="acceptRing(false)">${CI.phone}</button><button class="cbtn ok big" title="Atender com vídeo" onclick="acceptRing(true)">${CI.cam}</button></div></div>`;
   document.body.appendChild(box);
-  notify({ author: p.from, content: p.video ? "📹 Chamada de vídeo" : "📞 Chamada de voz", channel: p.cid });
+  bringToFront();
+  desktopNotify(`${dname(u)} está te ligando`, row.video ? "📹 Chamada de vídeo — toque para atender" : "📞 Chamada de voz — toque para atender", { tag: "call", force: true, href: callRoute(row.cid) });
 }
 function stopRinging(missed) {
   if (!ringing) return;
@@ -333,10 +395,50 @@ function stopRinging(missed) {
   if (missed === true) toast(`Chamada perdida de ${dname(S.users[ringing.from])}`);
   ringing = null;
 }
-function acceptRing(video) { const r = ringing; stopRinging(); if (!r) return; navigate(callRoute(r.cid)); joinCall(r.cid, { video }); }
-function declineRing() { const r = ringing; stopRinging(); if (r) sendInbox(r.from, "decline", { cid: r.cid }); }
+function acceptRing(video) { const r = ringing; stopRinging(); if (!r) return; setInvite(r.id, "accepted"); navigate(callRoute(r.cid)); joinCall(r.cid, { video }); }
+function declineRing() { const r = ringing; stopRinging(); if (r) setInvite(r.id, "declined"); }
+// traz o Cuplock para frente (app de PC) e pisca na barra de tarefas
+async function bringToFront() {
+  try {
+    const w = window.__TAURI__?.window?.getCurrentWindow?.();
+    if (w) { await w.unminimize().catch(() => {}); await w.show().catch(() => {}); await w.setFocus().catch(() => {}); await w.requestUserAttention(1).catch(() => {}); }
+  } catch {}
+}
 
-// ---- sons ----
+// ---- sons (arquivos em client/sounds) ----
+const SND = { ring: "sounds/ring.mp3", notify: "sounds/notify.mp3", notifyLong: "sounds/notify-long.mp3" };
+let ringAudio = null;
+["pointerdown", "keydown"].forEach(ev => addEventListener(ev, function unlock() {
+  try { const a = new Audio(SND.notify); a.volume = 0; a.play().then(() => a.pause()).catch(() => {}); } catch {}
+  removeEventListener(ev, unlock, true);
+}, true));
+function soundOut(a) { if (S.prefs.speakerId && a.setSinkId) a.setSinkId(S.prefs.speakerId).catch(() => {}); return a; }
+function playRing() {
+  stopRing();
+  if (S.prefs.callSounds === false) return;
+  ringAudio = soundOut(new Audio(SND.ring)); ringAudio.loop = true; ringAudio.volume = Math.min(1, (S.prefs.ringVolume ?? 80) / 100);
+  ringAudio.play().catch(() => {});
+}
+function stopRing() { if (ringAudio) { ringAudio.pause(); ringAudio = null; } }
+function playNotify() {
+  if (S.prefs.sounds === false || S.me?.status === "busy") return;
+  const a = soundOut(new Audio(S.prefs.notifySound === "long" ? SND.notifyLong : SND.notify));
+  a.volume = Math.min(1, (S.prefs.notifyVolume ?? 70) / 100); a.play().catch(() => {});
+}
+// Notificação na área de trabalho: no app de PC usa a notificação nativa do Windows
+// (plugin do Tauri), no Android usa a ponte nativa, no navegador a API Notification.
+async function desktopNotify(title, body, opts = {}) {
+  if (S.prefs.desktopNotif === false) return;
+  if (!opts.force && document.hasFocus() && !document.hidden) return;
+  try {
+    if (window.CuplockNative?.notify) return window.CuplockNative.notify(String(title).slice(0, 80), String(body).slice(0, 200));
+    if (window.__TAURI__?.core?.invoke) return await window.__TAURI__.core.invoke("plugin:notification|notify", { options: { title: String(title).slice(0, 80), body: String(body).slice(0, 200) } });
+    if ("Notification" in window) {
+      if (Notification.permission === "default") await Notification.requestPermission();
+      if (Notification.permission === "granted") { const n = new Notification(title, { body, icon: "icon.svg", tag: opts.tag, silent: true }); n.onclick = () => { window.focus(); opts.href && navigate(opts.href); }; return; }
+    }
+  } catch {}
+}
 let toneCtx;
 function tone(kind) {
   if (!S.prefs.callSounds && S.prefs.callSounds !== undefined) return;
@@ -350,12 +452,7 @@ function tone(kind) {
     });
   } catch {}
 }
-function startRingtone() {
-  let stopped = false;
-  const loop = () => { if (stopped) return; tone("join"); setTimeout(() => !stopped && tone("join"), 350); setTimeout(loop, 2200); };
-  loop();
-  return { stop: () => (stopped = true) };
-}
+function startRingtone() { playRing(); return { stop: stopRing }; }
 
 // ---- quem está falando ----
 let meterT = null, meterCtx = null;
@@ -512,6 +609,28 @@ async function testCam(btn) {
   try { camTest = await navigator.mediaDevices.getUserMedia({ video: videoConstraints() }); } catch { return toast("Não consegui abrir a câmera."); }
   v.srcObject = camTest; v.style.display = "block"; btn.textContent = "Parar câmera";
 }
+async function testConnection(btn) {
+  const out = document.getElementById("conntest"); if (!out) return;
+  btn.disabled = true; out.innerHTML = "Testando… (até 8 s)";
+  await loadIceServers(true);
+  const found = { host: false, srflx: false, relay: false };
+  try {
+    const pc = new RTCPeerConnection({ iceServers });
+    pc.createDataChannel("t");
+    pc.onicecandidate = e => { const c = e.candidate?.candidate || ""; for (const t of ["host", "srflx", "relay"]) if (c.includes(" typ " + t)) found[t] = true; };
+    await pc.setLocalDescription(await pc.createOffer());
+    await new Promise(r => { const t = setTimeout(r, 8000); pc.onicegatheringstatechange = () => { if (pc.iceGatheringState === "complete") { clearTimeout(t); r(); } }; });
+    pc.close();
+  } catch {}
+  const ok = (b, t) => `<div>${b ? "✅" : "❌"} ${t}</div>`;
+  out.innerHTML = ok(found.host, "Rede local") + ok(found.srflx, "Conexão direta pela internet (STUN)") +
+    (hasTurn() ? ok(found.relay, "Servidor TURN (para redes bloqueadas)") : `<div>⚪ Servidor TURN não configurado</div>`) +
+    `<p class="small" style="margin-top:8px">${found.relay ? "Tudo certo: as calls devem funcionar em qualquer rede." :
+      found.srflx ? (hasTurn() ? "O TURN configurado não respondeu — confira os dados no painel de desenvolvedor." : "Calls diretas devem funcionar. Se alguém não conseguir conectar, o OWNER precisa configurar um TURN.") :
+      hasTurn() ? "Sua rede bloqueia conexão direta e o TURN não respondeu — confira os dados do TURN no painel de desenvolvedor (ou sua internet está fora do ar)." :
+      "Sua rede bloqueia conexão direta. Sem um servidor TURN, as calls podem não conectar."}</p>`;
+  btn.disabled = false;
+}
 function voiceSettingsHtml() {
   const p = S.prefs, d = S.devices || { mics: [], cams: [], speakers: [] };
   const sel = (k, list, label) => `<select class="input" onchange="setPref('${k}',this.value)"><option value="">Padrão do sistema</option>${list.map(x => `<option value="${esc(x.deviceId)}" ${p[k] === x.deviceId ? "selected" : ""}>${esc(x.label || label)}</option>`).join("")}</select>`;
@@ -526,6 +645,11 @@ function voiceSettingsHtml() {
     <label class="f" style="margin-top:24px">Processamento de voz</label>
     ${tog("noise", "Supressão de ruído", "Reduz barulho de fundo (teclado, ventilador)")}${tog("echo", "Cancelamento de eco", "Evita que sua voz volte para os outros")}${tog("agc", "Volume automático", "Ajusta o volume do microfone sozinho")}
     ${tog("joinMuted", "Entrar mudo nas calls", "O microfone começa desligado", false)}${tog("callSounds", "Sons da call", "Toca um som quando alguém entra ou sai", true)}
+    <label class="f" style="margin-top:24px">Volume do toque de chamada <span class="muted" id="v-ring">${p.ringVolume ?? 80}%</span></label>
+    <input type="range" min="0" max="100" value="${p.ringVolume ?? 80}" oninput="setPref('ringVolume',+this.value);document.getElementById('v-ring').textContent=this.value+'%'">
+    <div style="margin-top:8px"><button class="btn ghost sm" onclick="ringAudio ? stopRing() : playRing()">▶ Ouvir toque</button></div>
+    <label class="f" style="margin-top:24px">Conexão das calls</label>
+    <div class="card" style="padding:14px"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:200px">Verifica se sua internet permite calls (e se o servidor TURN está funcionando).</span><button class="btn sm" onclick="testConnection(this)">Testar conexão</button></div><div id="conntest" class="small" style="margin-top:10px;line-height:1.8"></div></div>
     <label class="f" style="margin-top:24px">Compartilhar tela</label>
     <div class="seg">${[[15, "15 fps (leve)"], [30, "30 fps"], [60, "60 fps (jogos)"]].map(([v, n]) => `<button class="${(p.screenFps || 30) === v ? "on" : ""}" onclick="setPref('screenFps',${v});renderSettings()">${n}</button>`).join("")}</div>
     <p class="muted small" style="margin-top:14px">As calls conectam direto entre os PCs. Em algumas redes muito fechadas (empresa, faculdade) pode ser preciso um servidor TURN — veja o LEIA-ME.</p>`;

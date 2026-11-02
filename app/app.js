@@ -4,11 +4,12 @@
    Supabase: contas (e-mail + senha), banco e tempo real.
    ============================================================ */
 
-const VERSION = "3.2.0";
+const VERSION = "3.5.0";
 const DEFAULT_PREFS = {
   theme: "meianoite", accent: "#a78bfa", accent2: "#f472b6", wallpaper: "aurora", wallUrl: "", wallBlur: 0, wallDim: 30, wallAnim: true,
   panelOpacity: 78, glass: true, radius: 20, gap: 10, font: "jakarta", fontSize: 15, msgStyle: "bubbles", avatarShape: "squircle",
   reduceMotion: false, sounds: true, enterSends: true, membersOpen: true, time24: true, customCss: "",
+  notifySound: "short", desktopNotif: true,
   showActivity: true, customGames: [], manualActivity: null,
 };
 const THEMES = {
@@ -22,11 +23,24 @@ const THEMES = {
   claro: { name: "Claro", light: true, bg0: "#e8e6ef", bg1: "#ffffff", bg3: "#f1eff6", bg4: "#e1deea", fg: "#17141f", fg2: "#55506a", fg3: "#8a859e" },
   sakura: { name: "Sakura", light: true, bg0: "#f6e7ee", bg1: "#fff8fb", bg3: "#fbeaf1", bg4: "#f1d5e1", fg: "#2a1620", fg2: "#7a5566", fg3: "#a8899a" },
   menta: { name: "Menta", light: true, bg0: "#e3f2ec", bg1: "#f8fffc", bg3: "#ebf7f2", bg4: "#d4ebe1", fg: "#10241c", fg2: "#4a6a5d", fg3: "#7f9b90" },
+  synthwave: { name: "Synthwave", bg0: "#14081f", bg1: "#1f0d33", bg3: "#2b1347", bg4: "#3a1b5e", fg: "#fdf0ff", fg2: "#d9a8f5", fg3: "#9a6fb8" },
+  nord: { name: "Nord", bg0: "#242933", bg1: "#2e3440", bg3: "#3b4252", bg4: "#434c5e", fg: "#eceff4", fg2: "#d8dee9", fg3: "#8b95a7" },
+  dracula: { name: "Drácula", bg0: "#191a21", bg1: "#282a36", bg3: "#343746", bg4: "#44475a", fg: "#f8f8f2", fg2: "#c3c6d4", fg3: "#7c80a0" },
+  matcha: { name: "Matcha", light: true, bg0: "#e7eedd", bg1: "#fbfdf6", bg3: "#eef4e5", bg4: "#d9e6c9", fg: "#1f2a16", fg2: "#4c5e3c", fg3: "#84957a" },
+  pessego: { name: "Pêssego", light: true, bg0: "#f8e6dc", bg1: "#fffaf6", bg3: "#fbede5", bg4: "#f2d6c6", fg: "#2b1a12", fg2: "#7a5443", fg3: "#a8877a" },
+  // temas especiais: mudam o visual inteiro (kit = preferências aplicadas junto)
+  aero: { name: "Frutiger Aero", special: true, light: true, bg0: "#bfe8fb", bg1: "#f2fbff", bg3: "#e3f6ff", bg4: "#c4ebfb", fg: "#0b3550", fg2: "#2d6a8a", fg3: "#6a9bb5",
+    preview: "linear-gradient(180deg,#8fd8ff 0%,#d8f4ff 45%,#5fd0ea 60%,#0f8fc2 100%)",
+    kit: { accent: "#19b4ef", accent2: "#3fd27f", wallpaper: "aero", wallAnim: true, wallBlur: 0, wallDim: 0, glass: true, panelOpacity: 52, radius: 18, gap: 10, font: "segoe", msgStyle: "bubbles", avatarShape: "round" } },
+  v2015: { name: "2015 Vibez", special: true, bg0: "#1e2124", bg1: "#2e3136", bg3: "#40444b", bg4: "#4f545c", fg: "#ffffff", fg2: "#b9bbbe", fg3: "#8a8e94",
+    preview: "linear-gradient(90deg,#1e2124 0 18%,#2e3136 18% 45%,#36393e 45%)",
+    kit: { accent: "#7289da", accent2: "#7289da", wallpaper: "liso", wallAnim: false, wallBlur: 0, wallDim: 0, glass: false, panelOpacity: 100, radius: 4, gap: 0, font: "opensans", msgStyle: "classic", avatarShape: "round" } },
 };
 const FONTS = {
   jakarta: ["Plus Jakarta Sans", "Plus+Jakarta+Sans:wght@400;500;600;700;800"], grotesk: ["Space Grotesk", "Space+Grotesk:wght@400;500;600;700"],
   outfit: ["Outfit", "Outfit:wght@400;500;600;700;800"], nunito: ["Nunito", "Nunito:wght@400;600;700;800"],
   sora: ["Sora", "Sora:wght@400;500;600;700;800"], mono: ["JetBrains Mono", "JetBrains+Mono:wght@400;500;600;700;800"], sistema: ["system-ui", null],
+  segoe: ["Segoe UI", null], opensans: ["Open Sans", "Open+Sans:wght@400;600;700;800"],
 };
 const WALLPAPERS = {
   aurora: { name: "Aurora", anim: true, css: (p, t) => `radial-gradient(55% 45% at 12% 8%, ${p.accent}66, transparent 70%), radial-gradient(50% 50% at 92% 92%, ${p.accent2}55, transparent 70%), radial-gradient(35% 35% at 75% 15%, ${p.accent}33, transparent 70%), ${t.bg0}` },
@@ -36,6 +50,7 @@ const WALLPAPERS = {
   mar: { name: "Mar", css: () => `linear-gradient(170deg, #1cb5e0 0%, #0f4c75 50%, #0b1d33 100%)` },
   pontos: { name: "Pontilhado", css: (p, t) => `radial-gradient(${p.accent}55 1.2px, transparent 1.4px) 0 0/22px 22px, ${t.bg0}` },
   liso: { name: "Liso", css: (p, t) => t.bg0 },
+  aero: { name: "Água", anim: true, css: () => `radial-gradient(40% 30% at 82% 10%, #ffffffee, #ffffff00 70%), url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%201440%20320%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20fill-opacity%3D%22.35%22%20d%3D%22M0%20160c120%2040%20240%2060%20360%2040s240-80%20360-80%20240%2060%20360%2080%20240-20%20360-60v180H0z%22/%3E%3Cpath%20fill%3D%22%23ffffff%22%20fill-opacity%3D%22.25%22%20d%3D%22M0%20220c160-40%20320-60%20480-30s320%2070%20480%2060%20320-50%20480-60v130H0z%22/%3E%3C/svg%3E") bottom/100% 42% no-repeat, radial-gradient(120% 55% at 50% 115%, #0a7fb8 0%, #19b3dc 45%, #ffffff00 75%), linear-gradient(180deg, #6fcdfb 0%, #aee6ff 30%, #e6f9ff 52%, #7fdcec 64%, #22a9d6 82%, #0b78b0 100%)` },
   imagem: { name: "Imagem", css: (p, t) => /^https:\/\/[^\s"'()<>\\]+$/.test(p.wallUrl) ? `url("${p.wallUrl}") center/cover no-repeat, ${t.bg0}` : t.bg0 },
 };
 const ACT_LABEL = { playing: "Jogando", listening: "Ouvindo", watching: "Assistindo", coding: "Programando no", creating: "Criando no", streaming: "Transmitindo com", custom: "" };
@@ -161,7 +176,30 @@ function applyPrefs() {
   document.body.classList.toggle("reduce", p.reduceMotion);
   document.body.classList.toggle("noglass", !p.glass);
   document.body.classList.toggle("round", p.avatarShape === "round");
+  document.body.dataset.theme = p.theme;
+  setBubbles(p.theme === "aero" && p.wallAnim && !p.reduceMotion);
   const cc = document.getElementById("customcss"); if (cc) cc.textContent = p.customCss || "";
+}
+// bolhas subindo (tema Frutiger Aero)
+function setBubbles(on) {
+  let el = document.getElementById("bubbles");
+  if (!on) { el?.remove(); return; }
+  if (el) return;
+  el = Object.assign(document.createElement("div"), { id: "bubbles" });
+  el.innerHTML = Array.from({ length: 22 }, (_, i) => {
+    const size = 8 + Math.round(Math.random() * 46), left = Math.round(Math.random() * 100), dur = 9 + Math.random() * 14, delay = -Math.random() * dur, drift = Math.round(Math.random() * 60 - 30);
+    return `<i style="width:${size}px;height:${size}px;left:${left}%;animation-duration:${dur.toFixed(1)}s;animation-delay:${delay.toFixed(1)}s;--drift:${drift}px"></i>`;
+  }).join("");
+  document.body.insertBefore(el, document.getElementById("app"));
+}
+// escolher tema: temas especiais trazem o visual completo; voltar para um normal desfaz o kit
+function applyThemeKit(k) {
+  const next = THEMES[k], prev = THEMES[S.prefs.theme];
+  if (!next) return;
+  if (next.kit) Object.assign(S.prefs, next.kit);
+  else if (prev?.kit) for (const key of Object.keys(prev.kit)) S.prefs[key] = DEFAULT_PREFS[key];
+  setPref("theme", k);
+  if (S.route.name === "settings") renderSettings();
 }
 let prefTimer;
 function setPref(k, v) {
@@ -297,12 +335,13 @@ function connect() {
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "channels" }, p => onEvent({ type: "channel_create", channel: p.new }))
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "members" }, p => onEvent({ type: "member_join", ...p.new }))
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, p => onEvent({ type: "user_update", user: p.new }))
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "announcements" }, p => { if (p.new.author !== uid()) showAnnouncement(p.new); })
     .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, p => { feedEvent(p.eventType, p.eventType === "DELETE" ? p.old : p.new); if (p.eventType === "INSERT" && !p.new.parent_id && S.route.name !== "feed") renderChrome(); })
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "friends", filter: `user_id=eq.${me}` }, p => onEvent({ type: "friend_added", id: p.new.friend_id }))
     .on("postgres_changes", { event: "DELETE", schema: "public", table: "friends" }, p => p.old.user_id === me && onEvent({ type: "friend_removed", id: p.old.friend_id }))
     .subscribe(status => {
       S.rtStatus = status;
-      if (status === "SUBSCRIBED" && !presenceCh) { connectPresence(); detectActivity(); connectInbox(); startUpdateChecks(); }
+      if (status === "SUBSCRIBED" && !presenceCh) { connectPresence(); detectActivity(); connectInbox(); startUpdateChecks(); checkAnnouncements(); }
       const up = status === "SUBSCRIBED";
       $("#conn").classList.toggle("show", !up && rtEverUp);
       if (up) { if (rtEverUp) resync(); rtEverUp = true; }
@@ -345,7 +384,11 @@ async function onEvent(ev) {
     }
     case "user_update": {
       S.users[ev.user.id] = ev.user;
-      if (ev.user.id === me) S.me = ev.user;
+      if (ev.user.id === me) {
+        S.me = ev.user;
+        if (ev.user.banned && !S.bannedShown) { renderBanned(); break; }
+        if (!ev.user.banned && S.bannedShown) { S.bannedShown = false; toast("Sua conta foi desbanida 🎉"); S.loaded = false; app.innerHTML = ""; route(); break; }
+      }
       renderChrome(); renderMembers();
       break;
     }
@@ -380,16 +423,13 @@ setInterval(() => {
   if (changed) renderTyping();
 }, 1000);
 
-let audioCtx;
 function notify(m) {
-  if (!S.prefs.sounds || S.me?.status === "busy") return;
-  try {
-    audioCtx ||= new AudioContext();
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    o.frequency.value = 880; g.gain.setValueAtTime(.06, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(.0001, audioCtx.currentTime + .25);
-    o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + .25);
-  } catch {}
-  try { if (document.hidden && Notification.permission === "granted") new Notification(dname(S.users[m.author]) || "Cuplock", { body: (m.content || (m.attachment?.type?.startsWith("audio") ? "🎙️ Mensagem de voz" : "📷 Foto")).slice(0, 120), tag: m.channel }); } catch {}
+  playNotify();
+  const u = S.users[m.author], dm = m.channel.startsWith("dm:");
+  let where = "";
+  if (!dm) { for (const s of S.servers) { const c = s.channels.find(x => x.id === m.channel); if (c) { where = ` em #${c.name} · ${s.name}`; break; } } }
+  const body = m.content || (m.attachment?.type?.startsWith("audio") ? "🎙️ Mensagem de voz" : "📷 Foto");
+  desktopNotify(`${dname(u)}${where}`, body.slice(0, 160), { tag: m.channel, href: dm ? "/dm/" + m.author : null });
 }
 
 async function logout() {
@@ -408,10 +448,10 @@ const ROUTES = [
   ["/setup", "setup"], ["/login", "login"], ["/pwa", "pwa"], ["/dev", "dev"],
   ["/invite/:code", "invite"], ["/bot/:id", "bot"], ["/user/:id", "bot"],
   ["/discover", "discover"], ["/settings", "settings"], ["/settings/:tab", "settings"],
-  ["/friends", "friends"], ["/dm/:uid", "dm"], ["/feed", "feed"], ["/post/:id", "post"],
+  ["/friends", "friends"], ["/dm/:uid", "dm"], ["/feed", "feed"], ["/post/:id", "post"], ["/admin", "admin"],
   ["/server/:sid/channel/:cid", "channel"], ["/server/:sid", "server"], ["/", "home"],
 ];
-const PUBLIC = new Set(["setup", "login", "pwa", "dev", "invite"]);
+const PUBLIC = new Set(["setup", "login", "pwa", "invite"]);
 const curPath = () => (location.hash.slice(1) || "/").split("?")[0];
 const curQuery = () => new URLSearchParams((location.hash.split("?")[1]) || "");
 function match(path) {
@@ -447,7 +487,7 @@ async function route() {
   if (!S.session && !PUBLIC.has(r.name)) return navigate("/login?next=" + encodeURIComponent(curPath()), true);
   if (S.session && !S.loaded) {
     app.innerHTML = `<div class="center"><div style="text-align:center"><img src="icon.svg" width="72" style="animation:pop .6s infinite alternate"><p class="muted" style="margin-top:12px">Carregando…</p></div></div>`;
-    try { await bootstrap(); connect(); }
+    try { await bootstrap(); if (S.me?.banned) return renderBanned(); connect(); }
     catch (e) {
       app.innerHTML = `<div class="center"><div class="panel"><h1>Não foi possível conectar</h1><p class="sub">${esc(e.message)}</p><br>
         <button class="btn" onclick="location.reload()">Tentar de novo</button> <button class="btn ghost" onclick="logout()">Sair</button></div></div>`;
@@ -455,6 +495,9 @@ async function route() {
     }
   }
   if (r.name === "login" && S.session) return navigate(curQuery().get("next") || "/", true);
+  if (S.me?.banned) return renderBanned();
+  if (r.name === "admin" && !isStaff()) { toast("Só a staff tem acesso ao painel."); return navigate("/", true); }
+  if (r.name === "dev" && !isOwner()) { toast("Ferramentas de desenvolvedor são só para o OWNER."); return navigate("/", true); }
   if (r.name === "home") return navigate(S.lastChannel._ || "/friends", true);
   if (r.name === "server") {
     const s = S.servers.find(x => x.id === r.params.sid);
@@ -481,7 +524,14 @@ function avatar(u, size = "", dot = true) {
   const img = u.avatar_url && /^https:\/\/[^\s"'()<>\\]+$/.test(u.avatar_url) ? `background:url('${u.avatar_url}') center/cover,${esc(u.color)}` : `background:${esc(u.color)}`;
   return `<div class="avatar ${size}" style="${img}">${u.avatar_url ? "" : initials(u.username)}${dot ? `<span class="dot ${effStatus(u)}"></span>` : ""}</div>`;
 }
-function uname(u) { return esc(dname(u)); }
+function roleTag(u) {
+  if (u?.role === "owner") return ' <span class="rtag owner" title="Dono do Cuplock"><span>OWNER</span></span>';
+  if (u?.role === "staff") return ' <span class="rtag staff" title="Equipe do Cuplock">STAFF</span>';
+  return "";
+}
+function uname(u) { return esc(dname(u)) + roleTag(u); }
+const isStaff = () => ["owner", "staff"].includes(S.me?.role);
+const isOwner = () => S.me?.role === "owner";
 
 function render() {
   const r = S.route.name;
@@ -503,6 +553,7 @@ function renderShell() {
   if (r.name === "friends") renderFriends(main);
   else if (r.name === "feed") renderFeed(main);
   else if (r.name === "post") renderPostPage(main);
+  else if (r.name === "admin") renderAdmin(main);
   else if (r.name === "discover") renderDiscover(main);
   else if (r.name === "bot") renderProfile(main);
   else if (r.name === "channel" || r.name === "dm") renderChat(main);
@@ -513,7 +564,7 @@ function renderShell() {
 function renderChrome() {
   if (!$(".rail", app) || !S.me) return;
   const r = S.route, sid = r.params.sid, me = uid();
-  const homeOn = ["friends", "dm", "bot", "settings", "feed", "post"].includes(r.name);
+  const homeOn = ["friends", "dm", "bot", "settings", "feed", "post", "admin"].includes(r.name);
   const dmUnread = [...S.unread].filter(c => c.startsWith("dm:")).length;
   $(".rail", app).innerHTML = h`
     <a class="pill logo ${homeOn ? "on" : ""}" href="/friends" data-link data-tip="Início"><img src="icon.svg" width="30" alt="Cuplock">${dmUnread ? '<span class="badge"></span>' : ""}</a>
@@ -544,6 +595,8 @@ function renderChrome() {
       <div class="side-scroll">
         <a class="item ${r.name === "friends" ? "on" : ""}" href="/friends" data-link onclick="closeNav()"><span class="hash">${ICON.friends.replace("<svg", '<svg width="19"')}</span><span class="grow">Amigos</span></a>
         <a class="item ${["feed", "post"].includes(r.name) ? "on" : ""}" href="/feed" data-link onclick="closeNav()"><span class="hash" style="font-size:17px">🌊</span><span class="grow">Feed <span class="muted" style="font-weight:500">(Cupdive)</span></span>${FEED.fresh.length ? `<span class="incall" style="color:var(--accent)">${FEED.fresh.length}</span>` : ""}</a>
+        <a class="item" href="#" onclick="event.preventDefault();openAnnouncements();closeNav()"><span class="hash" style="font-size:16px">📢</span><span class="grow">Anúncios</span></a>
+        ${isStaff() ? `<a class="item ${r.name === "admin" ? "on" : ""}" href="/admin" data-link onclick="closeNav()"><span class="hash" style="font-size:16px">🛡️</span><span class="grow">Painel da ${isOwner() ? "owner" : "staff"}</span></a>` : ""}
         <a class="item ${r.name === "discover" ? "on" : ""}" href="/discover" data-link onclick="closeNav()"><span class="hash">${ICON.compass.replace("<svg", '<svg width="19"')}</span><span class="grow">Explorar</span></a>
         <div class="side-label"><span>Conversas</span></div>
         ${dmList.length ? dmList.map(id => { const u = S.users[id], c = dmId(me, id); return `<a class="item ${r.params.uid === id ? "on" : ""} ${S.unread.has(c) && r.params.uid !== id ? "unread" : ""}" href="/dm/${id}" data-link onclick="closeNav()">${avatar(u)}<span class="grow">${uname(u)}<span class="sub">${activityLine(u) || statusLabel[effStatus(u)]}</span></span></a>`; })
@@ -656,7 +709,7 @@ function renderBubbles(list) {
     const u = S.users[first.author], mine = first.author === me;
     out += `<div class="bgroup ${mine ? "mine" : ""}">${mine ? "" : `<div onclick="profilePopout(event,'${first.author}')" style="cursor:pointer">${avatar(u, "", false)}</div>`}
       <div class="bcol">${mine ? "" : `<div class="bname" style="color:${esc(u?.color)}" onclick="profilePopout(event,'${first.author}')">${uname(u)}<time>${fmtTime(first.ts)}</time></div>`}
-      ${run.map(m => `<div class="bubble ${m.attachment ? "photo" : ""} ${m.attachment && !m.content ? "only" : ""} ${m.pending ? "pending" : ""} ${m.failed ? "failed msg" : ""}" data-id="${m.id}" title="${fmtDay(m.ts)} ${fmtTime(m.ts)}"${mine && !m.pending && !m.failed ? ` oncontextmenu="msgMenu(event,'${m.id}')"` : ""}>${m.attachment ? attachHtml(m.attachment, mine) : ""}${m.content ? `<div class="text">${md(m.content)}</div>` : ""}</div>`).join("")}
+      ${run.map(m => `<div class="bubble ${m.attachment ? "photo" : ""} ${m.attachment && !m.content ? "only" : ""} ${m.pending ? "pending" : ""} ${m.failed ? "failed msg" : ""}" data-id="${m.id}" title="${fmtDay(m.ts)} ${fmtTime(m.ts)}"${(mine || (isStaff() && !m.channel.startsWith("dm:"))) && !m.pending && !m.failed ? ` oncontextmenu="msgMenu(event,'${m.id}')"` : ""}>${m.attachment ? attachHtml(m.attachment, mine) : ""}${m.content ? `<div class="text">${md(m.content)}</div>` : ""}</div>`).join("")}
       </div></div>`;
     i += run.length;
   }
@@ -665,7 +718,7 @@ function renderBubbles(list) {
 function messageHtml(m, cont) {
   const u = S.users[m.author], cls = `${m.pending ? "pending" : ""} ${m.failed ? "failed" : ""}`;
   const mine = m.author === uid() && !m.pending && !m.failed;
-  const ctx = mine ? ` oncontextmenu="msgMenu(event,'${m.id}')"` : "";
+  const ctx = mine || (isStaff() && !m.pending && !m.channel.startsWith("dm:")) ? ` oncontextmenu="msgMenu(event,'${m.id}')"` : "";
   const body = `${m.attachment ? attachHtml(m.attachment) : ""}${m.content ? `<div class="text">${md(m.content)}${m.failed ? ' <small>— falhou, clique para reenviar</small>' : ""}</div>` : m.failed ? '<div class="text"><small>Foto falhou — clique para reenviar</small></div>' : ""}`;
   if (cont) return `<div class="msg cont ${cls}" data-id="${m.id}"${ctx}><span class="hover-time">${fmtTime(m.ts)}</span><div class="msg-body">${body}</div></div>`;
   const day = fmtDay(m.ts);
@@ -934,7 +987,8 @@ function renderSettings() {
       <form id="gf" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><input class="input" name="icon" maxlength="4" placeholder="🎮" style="width:64px;text-align:center">
         <input class="input" name="name" required maxlength="40" placeholder="Nome do jogo" style="flex:1;min-width:140px"><input class="input" name="exe" required maxlength="80" placeholder="jogo.exe" style="flex:1;min-width:140px"><button class="btn sm">Adicionar</button></form>`,
     appearance: h`<h2>Aparência</h2><p>Deixe o Cuplock com a sua cara. Tudo muda na hora.</p>
-      <label class="f">Tema</label><div class="choice-grid">${Object.entries(THEMES).map(([k, th]) => `<button class="choice ${p.theme === k ? "on" : ""}" onclick="setPref('theme','${k}');renderSettings()"><div class="pv" style="background:linear-gradient(135deg,${th.bg0} 50%,${th.bg3} 50%)"><span style="position:absolute;left:10px;top:10px;width:40%;height:10px;border-radius:5px;background:${th.fg2}"></span><span style="position:absolute;right:10px;bottom:10px;width:30px;height:16px;border-radius:8px;background:linear-gradient(135deg,${p.accent},${p.accent2})"></span></div>${th.name}</button>`)}</div>
+      <label class="f">Temas especiais</label><div class="choice-grid special">${Object.entries(THEMES).filter(([, th]) => th.special).map(([k, th]) => `<button class="choice ${p.theme === k ? "on" : ""}" onclick="applyThemeKit('${k}')"><div class="pv" style="background:${th.preview}">${k === "aero" ? '<span class="pv-bub"></span><span class="pv-bub b2"></span>' : '<span class="pv-2015"></span>'}</div>${th.name}</button>`)}</div>
+      <label class="f">Tema</label><div class="choice-grid">${Object.entries(THEMES).filter(([, th]) => !th.special).map(([k, th]) => `<button class="choice ${p.theme === k ? "on" : ""}" onclick="applyThemeKit('${k}')"><div class="pv" style="background:linear-gradient(135deg,${th.bg0} 50%,${th.bg3} 50%)"><span style="position:absolute;left:10px;top:10px;width:40%;height:10px;border-radius:5px;background:${th.fg2}"></span><span style="position:absolute;right:10px;bottom:10px;width:30px;height:16px;border-radius:8px;background:linear-gradient(135deg,${p.accent},${p.accent2})"></span></div>${th.name}</button>`)}</div>
       <label class="f">Cores de destaque</label>
       <div class="swatches">${[["#a78bfa", "#f472b6"], ["#60a5fa", "#a78bfa"], ["#34d399", "#22d3ee"], ["#fb923c", "#f43f5e"], ["#facc15", "#fb923c"], ["#f472b6", "#fb7185"], ["#22d3ee", "#818cf8"], ["#e2e8f0", "#94a3b8"]].map(([a, b]) => `<button class="sw ${p.accent === a && p.accent2 === b ? "on" : ""}" style="background:linear-gradient(135deg,${a},${b})" onclick="setPref('accent','${a}');setPref('accent2','${b}');renderSettings()"></button>`)}
         <span class="muted small" style="margin-left:8px">ou escolha:</span><input type="color" value="${p.accent}" oninput="setPref('accent',this.value)" style="width:40px;height:34px;border:0;background:none"><input type="color" value="${p.accent2}" oninput="setPref('accent2',this.value)" style="width:40px;height:34px;border:0;background:none"></div>
@@ -960,14 +1014,20 @@ function renderSettings() {
       ${toggle("enterSends", "Enter envia a mensagem", "Desligado: use Ctrl + Enter para enviar")}${toggle("membersOpen", "Mostrar lista de membros", "Exibe os membros ao lado dos canais")}
       ${toggle("time24", "Relógio de 24 horas", "Mostra 18:30 em vez de 06:30 PM")}
       <div class="row"><div class="l"><b>Limpar cache</b><span>Recarrega as mensagens do servidor</span></div><button class="btn ghost sm" onclick="S.msgs={};toast('Cache limpo')">Limpar</button></div>`,
-    notifications: h`<h2>Notificações</h2><p>Sons e avisos.</p>${toggle("sounds", "Sons de notificação", "Toca um som suave em novas mensagens")}
-      <div class="row"><div class="l"><b>Notificações na área de trabalho</b><span>${"Notification" in window ? "Atual: " + ({ granted: "permitidas", denied: "bloqueadas", default: "não definidas" }[Notification.permission] || Notification.permission) : "Não suportado"}</span></div>
-      <button class="btn ghost sm" onclick="Notification.requestPermission().then(renderSettings)">Ativar</button></div>
-      <p class="muted small" style="margin-top:12px">Com o status <b>Não perturbe</b>, nenhum som toca.</p>`,
+    notifications: h`<h2>Notificações</h2><p>Sons e avisos na área de trabalho.</p>
+      ${toggle("sounds", "Som de notificação", "Toca um som quando chega mensagem")}
+      <label class="f">Som</label>${seg("notifySound", [["short", "🔔 Curto"], ["long", "🎶 Longo"]])}
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px"><button class="btn ghost sm" onclick="playNotify()">▶ Ouvir</button>
+        <span class="muted small" style="flex:1">Volume <b id="v-notif">${p.notifyVolume ?? 70}%</b></span></div>
+      <input type="range" min="0" max="100" value="${p.notifyVolume ?? 70}" oninput="setPref('notifyVolume',+this.value);document.getElementById('v-notif').textContent=this.value+'%'" style="margin-top:6px">
+      <div class="row"><div class="l"><b>Notificações na área de trabalho</b><span>Aparece um aviso no canto da tela quando chega mensagem ou ligação e o Cuplock não está em foco</span></div>
+        <button class="toggle ${p.desktopNotif !== false ? "on" : ""}" onclick="setPref('desktopNotif',S.prefs.desktopNotif===false);if(S.prefs.desktopNotif!==false&&'Notification' in window&&Notification.permission==='default')Notification.requestPermission();renderSettings()"></button></div>
+      <div class="row"><div class="l"><b>Testar</b><span>Mostra uma notificação de exemplo agora</span></div><button class="btn ghost sm" onclick="desktopNotify('Cuplock ☕','As notificações estão funcionando!',{force:true});playNotify()">Testar notificação</button></div>
+      <p class="muted small" style="margin-top:12px">Com o status <b>Não perturbe</b>, nada toca e ligações são recusadas automaticamente.</p>`,
     about: h`<h2>Sobre</h2><p>Cuplock <span id="appver">${VERSION}</span></p>
       <div class="row"><div class="l"><b>Atualizações</b><span>${window.__TAURI__ || IS_ANDROID ? "Verifica sozinho ao abrir e a cada 3 horas" : "Só nos apps de PC e Android"}</span></div><button class="btn ghost sm" onclick="checkUpdate(true)">Procurar atualização</button></div>
       <div class="row"><div class="l"><b>Instalar atualizações automaticamente</b><span>Baixa e reinicia sozinho (avisa 10 s antes; nunca durante uma call)</span></div><button class="toggle ${S.prefs.autoUpdate !== false ? "on" : ""}" onclick="setPref('autoUpdate',S.prefs.autoUpdate===false);renderSettings()"></button></div><div class="card" style="padding:20px;display:flex;gap:16px;align-items:center"><img src="icon.svg" width="56"><div><b style="font-size:18px">Cuplock</b><div class="muted small">App de mensagens feito em Rust (Tauri) + Supabase.</div></div></div>
-      <div class="row"><div class="l"><b>Ferramentas de desenvolvedor</b><span>Conexão, rotas e eventos ao vivo</span></div><a class="btn ghost sm" href="/dev" data-link>Abrir</a></div>
+      ${isOwner() ? `<div class="row"><div class="l"><b>Ferramentas de desenvolvedor</b><span>Só para o OWNER · conexão, rotas e eventos ao vivo</span></div><a class="btn ghost sm" href="/dev" data-link>Abrir</a></div>` : ""}
       <div class="row"><div class="l"><b>Atalhos</b><span><code>Ctrl K</code> busca rápida · <code>Esc</code> fechar · <code>Shift+Enter</code> nova linha</span></div></div>`,
   };
   el.innerHTML = h`<nav><div class="side-label">Configurações</div>${tabs.map(([k, n]) => `<button class="item ${settingsTab === k ? "on" : ""}" style="width:100%" onclick="settingsTab='${k}';history.replaceState({},'','#/settings/${k}');renderSettings();$('.settings section').scrollTop=0">${n}</button>`)}
@@ -1055,7 +1115,7 @@ function renderLogin() {
       ${reg ? `<label class="f" for="pw2">Confirmar senha</label><input class="input" id="pw2" name="password2" type="password" autocomplete="new-password" required>` : ""}
       <div class="err" id="aerr"></div>
       <button class="btn grad" style="width:100%;padding:12px">${reg ? "Criar conta" : "Entrar"}</button></form>
-    <p class="muted small" style="margin-top:18px;text-align:center"><a href="#" onclick="event.preventDefault();localStorage.removeItem('cl.cfg');location.hash='#/setup';location.reload()">Trocar servidor</a> · <a href="/dev" data-link>Desenvolvedor</a></p>
+    <p class="muted small" style="margin-top:18px;text-align:center"><a href="#" onclick="event.preventDefault();localStorage.removeItem('cl.cfg');location.hash='#/setup';location.reload()">Trocar servidor</a></p>
   </div></div>`;
   (reg ? $("#un") : $("#em").value ? $("#pw") : $("#em")).focus();
   let t;
@@ -1145,6 +1205,13 @@ async function renderDev() {
       Modo: <b>${IS_DESKTOP ? "App de PC (Tauri)" : "Navegador"}</b> · Versão ${VERSION}<br>
       Sessão: ${S.session ? `<b>${esc(S.me?.username || S.session.user.email)}</b> · <button class="btn ghost sm" onclick="logout()">Sair</button>` : `não logado · <a href="/login?next=/dev" data-link>Entrar</a>`}<br>
       Tempo real: <b id="rts">${esc(S.rtStatus)}</b></div>
+    <div class="side-label" style="padding-left:0">Servidor TURN das calls (vale para todo mundo)</div>
+    <div class="card" style="padding:14px 16px">
+      <p class="small" style="margin-bottom:10px">Faz as calls funcionarem para quem tem internet com CGNAT, 4G ou rede de empresa/faculdade.
+        Crie uma conta grátis em <b>metered.ca</b> → <b>TURN Server</b> → copie a lista <code>iceServers</code> (os colchetes <code>[ ... ]</code>) e cole aqui.</p>
+      <textarea class="input" id="turnjson" rows="6" spellcheck="false" style="font-family:ui-monospace,monospace;font-size:12.5px" placeholder='[{"urls":"turn:global.relay.metered.ca:80","username":"...","credential":"..."}]'></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn sm" onclick="saveTurn()">Salvar TURN</button><button class="btn ghost sm" onclick="saveTurn(true)">Remover</button><span class="muted small" id="turnmsg" style="align-self:center"></span></div>
+    </div>
     <div class="side-label" style="padding-left:0">Rotas do app</div>
     <div>${[["/login", "Entrar / criar conta"], ["/friends", "Amigos (início)"], ["/discover", "Explorar"], ["/settings", "Configurações"], ["/invite/:code", "Convite"], ["/bot/:id", "Perfil (bots e usuários)"], ["/server/:sid", "Servidor"], ["/server/:sid/channel/:cid", "Canal"], ["/dm/:uid", "Mensagem direta"], ["/pwa", "Entrada do app"], ["/setup", "Configurar servidor"], ["/dev", "Esta página"]]
       .map(([p, n]) => `<div class="route"><a href="${devExample(p)}" data-link>${p}</a><span class="muted">${n}</span></div>`)}</div>
@@ -1153,6 +1220,7 @@ async function renderDev() {
     <pre id="qout" style="margin-top:10px">—</pre>
     <div class="side-label" style="padding-left:0">Eventos ao vivo</div>
     <pre id="evlog">${S.events.length ? "" : "Aguardando eventos…"}</pre></div></div>`;
+  loadTurnBox();
   $("#qf").addEventListener("submit", async e => {
     e.preventDefault();
     if (!sb || !S.session) return ($("#qout").textContent = "Entre na sua conta primeiro.");
@@ -1172,6 +1240,27 @@ async function renderDev() {
     setTimeout(tick, 3000);
   };
   tick();
+}
+async function loadTurnBox() {
+  const el = document.getElementById("turnjson"); if (!el || !sb || !S.session) return;
+  try { const r = await q(sb.from("app_settings").select("value").eq("key", "turn").maybeSingle()); el.value = r ? JSON.stringify(r.value, null, 2) : ""; } catch {}
+}
+async function saveTurn(remove) {
+  const msg = document.getElementById("turnmsg");
+  try {
+    if (remove) { await q(sb.from("app_settings").delete().eq("key", "turn")); document.getElementById("turnjson").value = ""; msg.textContent = "Removido."; await loadIceServers(true); return; }
+    let raw = document.getElementById("turnjson").value.trim();
+    const m = raw.match(/\[[\s\S]*\]/); if (m) raw = m[0];         // aceita colar o trecho de código inteiro
+    let v; try { v = JSON.parse(raw); } catch {
+      // aceita o formato de código JS do site (chaves sem aspas, aspas simples, vírgula sobrando)
+      v = JSON.parse(raw.replace(/'/g, '"').replace(/([{,]\s*)([A-Za-z_]\w*)\s*:/g, '$1"$2":').replace(/,\s*([}\]])/g, "$1"));
+    }
+    v = asList(v).filter(validIce);
+    if (!v.length) throw new Error("Não achei nenhum servidor válido (precisa ter urls começando com turn: ou stun:).");
+    await q(sb.from("app_settings").upsert({ key: "turn", value: v, updated_at: new Date().toISOString() }));
+    msg.textContent = `Salvo ✓ (${v.length} servidor${v.length > 1 ? "es" : ""}). Já vale para as próximas calls de todo mundo.`;
+    await loadIceServers(true);
+  } catch (e) { msg.textContent = "Erro: " + e.message; }
 }
 function devExample(p) {
   const s = S.servers?.[0], me = uid() || "x", fr = S.friends?.[0] || me;
@@ -1284,7 +1373,7 @@ function quickSwitcher() {
   const items = [
     ...S.servers.flatMap(s => s.channels.map(c => ({ label: `# ${c.name}`, sub: s.name, href: `/server/${s.id}/channel/${c.id}` }))),
     ...S.friends.map(id => S.users[id]).filter(Boolean).map(u => ({ label: `@ ${dname(u)}`, sub: "@" + u.username, href: `/dm/${u.id}` })),
-    { label: "🌊 Feed (Cupdive)", sub: "Posts da galera", href: "/feed" }, { label: "🧭 Explorar", sub: "Encontrar comunidades", href: "/discover" }, { label: "⚙️ Configurações", sub: "", href: "/settings" }, { label: "🎨 Aparência", sub: "Personalizar", href: "/settings/appearance" }, { label: "🛠 Desenvolvedor", sub: "", href: "/dev" },
+    { label: "🌊 Feed (Cupdive)", sub: "Posts da galera", href: "/feed" }, { label: "🧭 Explorar", sub: "Encontrar comunidades", href: "/discover" }, { label: "⚙️ Configurações", sub: "", href: "/settings" }, { label: "🎨 Aparência", sub: "Personalizar", href: "/settings/appearance" }, ...(isStaff() ? [{ label: "🛡️ Painel da staff", sub: "Moderação e anúncios", href: "/admin" }] : []), ...(isOwner() ? [{ label: "🛠 Desenvolvedor", sub: "Só OWNER", href: "/dev" }] : []),
   ];
   modal(`<input class="input" id="qs" placeholder="Para onde você quer ir?" style="font-size:17px;padding:14px"><div id="qsl" style="margin-top:10px;max-height:340px;overflow-y:auto"></div>`, m => {
     let sel = 0, cur = items;

@@ -199,7 +199,7 @@ function postHtml(p, { detail = false, reply = false } = {}) {
       <div class="p-head"><b onclick="event.stopPropagation();profilePopout(event,'${p.author}')">${uname(u)}</b><span class="muted">@${esc(u?.username || "")} · ${timeAgo(p.ts)}</span>
         <button class="icon-btn p-more" title="Mais" onclick="event.stopPropagation();postMenu(event,'${p.id}')">${ICON.dots}</button></div>
       ${parent ? `<div class="muted small">respondendo a <b>@${esc(S.users[parent.author]?.username || "")}</b></div>` : ""}
-      ${p.content ? `<div class="p-text text">${md(p.content)}</div>` : ""}
+      ${p.content ? `<div class="p-text text">${md(p.content)}${p.edited_at ? ' <span class="edited">(editado)</span>' : ""}</div>` : ""}
       ${mediaHtml(p.media, mine)}
       <div class="p-actions">
         <button class="pa ${liked ? "liked" : ""}" onclick="event.stopPropagation();toggleLike('${p.id}')" title="Curtir"><span class="heart">${liked ? "♥" : "♡"}</span><span data-likes="${p.id}">${p.likes_count || ""}</span></button>
@@ -213,7 +213,8 @@ function postMenu(e, id) {
   const p = FEED.cache.get(id); if (!p) return;
   showCtx(e, `<button onclick="copy(FEED.cache.get('${id}').content||'');closeLayer()">Copiar texto</button>
     <button onclick="closeLayer();navigate('/user/${p.author}')">Ver perfil</button>
-    ${p.author === uid() ? `<button class="danger" onclick="deletePost('${id}')">Apagar</button>` : ""}`);
+    ${p.author === uid() || isStaff() ? `<button onclick="closeLayer();editPost('${id}')">Editar${p.author !== uid() ? " (staff)" : ""}</button>` : ""}
+    ${p.author === uid() || isStaff() ? `<button class="danger" onclick="deletePost('${id}')">Apagar${p.author !== uid() ? " (staff)" : ""}</button>` : ""}`);
 }
 function sharePost(id) {
   const p = FEED.cache.get(id); if (!p) return;
@@ -227,6 +228,33 @@ async function sendPostTo(friendId, postId, btn) {
   btn.disabled = true;
   try { await q(sb.from("messages").insert({ dm_key: dmId(uid(), friendId).slice(3), content: text })); btn.textContent = "Enviado ✓"; }
   catch (e) { toast(e.message); btn.disabled = false; }
+}
+function editPost(id) {
+  const p = FEED.cache.get(id); if (!p) return;
+  const el = document.querySelector(`[data-post="${id}"] .p-body`); if (!el) return;
+  const old = el.querySelector(".p-text"); const box = document.createElement("div"); box.className = "p-edit";
+  box.innerHTML = `<textarea class="input" rows="3" maxlength="2000"></textarea><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+    <button class="btn ghost sm" data-act="cancel">Cancelar</button><button class="btn sm" data-act="save">Salvar</button></div>`;
+  box.querySelector("textarea").value = p.content;
+  box.onclick = e => e.stopPropagation();
+  if (old) old.replaceWith(box); else el.querySelector(".p-head").after(box);
+  box.querySelector("textarea").focus();
+  box.querySelector('[data-act="cancel"]').onclick = () => rerenderPost(p);
+  box.querySelector('[data-act="save"]').onclick = async () => {
+    const content = box.querySelector("textarea").value.trim();
+    if (!content && !p.media) return toast("O post não pode ficar vazio.");
+    try {
+      const row = await q(sb.from("posts").update({ content }).eq("id", id).select().single());
+      p.content = row.content; p.edited_at = row.edited_at; rerenderPost(p); toast("Post editado");
+    } catch (e) { toast(e.message); }
+  };
+}
+function rerenderPost(p) {
+  document.querySelectorAll(`[data-post="${p.id}"]`).forEach(el => {
+    const t = document.createElement("div");
+    t.innerHTML = postHtml(p, { detail: el.classList.contains("detail"), reply: el.classList.contains("reply") });
+    el.replaceWith(t.firstElementChild);
+  });
 }
 async function deletePost(id) {
   closeLayer();
@@ -363,7 +391,10 @@ async function feedEvent(type, row) {
   const p = normPost(row);
   if (type === "UPDATE") {
     const c = FEED.cache.get(p.id); if (!c) return;
-    c.likes_count = p.likes_count; c.replies_count = p.replies_count; updateCounts(c); return;
+    const textChanged = c.content !== p.content;
+    c.likes_count = p.likes_count; c.replies_count = p.replies_count; c.content = p.content; c.edited_at = p.edited_at;
+    if (textChanged && !document.querySelector(`[data-post="${p.id}"] .p-edit`)) rerenderPost(c); else updateCounts(c);
+    return;
   }
   if (FEED.cache.has(p.id)) return;                 // foi eu que postei
   await ensureUsers([p.author]).catch(() => {});
