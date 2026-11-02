@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuplock — Leve igual um copo de papel</title>
+<meta name="description" content="Cuplock: app de mensagens leve, com calls de voz e vídeo, compartilhamento de tela e muito mais. Baixe para Windows ou use no navegador.">
+<meta property="og:title" content="Cuplock — Leve igual um copo de papel">
+<meta property="og:description" content="Converse, ligue e compartilhe a tela com seus amigos. Baixe para Windows ou use no navegador.">
+<meta property="og:image" content="/logo.png">
+<meta name="theme-color" content="#0c0a12">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--bg:#0c0a12;--fg:#efeaf7;--fg2:#b0a9c2;--fg3:#736c85;--a:#a78bfa;--b:#f472b6;--grad:linear-gradient(135deg,var(--a),var(--b))}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg);color:var(--fg);font-family:"Plus Jakarta Sans",ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+
+/* fundo aurora */
+.bg{position:fixed;inset:-20%;z-index:0;background:
+  radial-gradient(40% 35% at 20% 15%,#a78bfa55,transparent 70%),
+  radial-gradient(35% 35% at 85% 80%,#f472b64d,transparent 70%),
+  radial-gradient(30% 30% at 70% 20%,#60a5fa2e,transparent 70%),var(--bg);
+  animation:drift 22s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translate(0,0) rotate(0)}to{transform:translate(-4%,3%) rotate(4deg)}}
+.grain{position:fixed;inset:0;z-index:0;opacity:.06;pointer-events:none;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:3px 3px}
+
+main{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px 32px;text-align:center}
+
+/* logo com vapor */
+.logo-wrap{position:relative;width:168px;height:168px;margin-bottom:28px;animation:float 5s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
+.logo-wrap img{width:100%;height:100%;filter:drop-shadow(0 24px 50px rgba(167,139,250,.45))}
+.steam{position:absolute;top:-34px;width:10px;height:44px;border-radius:10px;background:linear-gradient(to top,rgba(255,255,255,.35),transparent);filter:blur(4px);animation:steam 3s ease-in-out infinite;opacity:0}
+.steam:nth-child(1){left:62px}.steam:nth-child(2){left:80px;animation-delay:1s}.steam:nth-child(3){left:98px;animation-delay:2s}
+@keyframes steam{0%{transform:translateY(16px) scaleX(1);opacity:0}40%{opacity:.9}100%{transform:translateY(-26px) scaleX(1.8);opacity:0}}
+
+h1{font-size:clamp(44px,8vw,84px);font-weight:800;letter-spacing:-.04em;line-height:1}
+h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tagline{margin-top:14px;font-size:clamp(17px,2.4vw,22px);color:var(--fg2);font-weight:500}
+.tagline b{color:var(--fg);font-weight:700}
+
+.ctas{display:flex;gap:14px;margin-top:38px;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:16px 30px;border-radius:18px;font-weight:800;font-size:17px;transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .2s,background .2s;cursor:pointer;border:0}
+.btn svg{width:22px;height:22px}
+.btn.primary{background:var(--grad);color:#fff;box-shadow:0 14px 40px rgba(244,114,182,.35)}
+.btn.primary:hover{transform:translateY(-3px);box-shadow:0 20px 50px rgba(244,114,182,.5)}
+.btn.ghost{background:rgba(255,255,255,.07);color:var(--fg);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(12px)}
+.btn.ghost:hover{transform:translateY(-3px);background:rgba(255,255,255,.12)}
+.meta{margin-top:14px;font-size:13px;color:var(--fg3);min-height:18px}
+.meta a{text-decoration:underline}
+
+.features{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:56px;max-width:760px}
+.chip{padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-size:14px;font-weight:600;color:var(--fg2);backdrop-filter:blur(10px)}
+
+footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg3);font-size:13px}
+
+.note{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:5;background:rgba(22,19,31,.92);border:1px solid rgba(255,255,255,.1);padding:14px 18px;border-radius:16px;max-width:min(460px,calc(100% - 32px));font-size:14px;color:var(--fg2);box-shadow:0 20px 50px rgba(0,0,0,.4);display:none;backdrop-filter:blur(16px)}
+.note b{color:var(--fg)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="grain"></div>
+<main>
+  <div class="logo-wrap"><span class="steam"></span><span class="steam"></span><span class="steam"></span><img src="/logo.png" alt="Logo do Cuplock"></div>
+  <h1><span>Cuplock</span></h1>
+  <p class="tagline"><b>Cuplock</b> — Leve igual um copo de papel</p>
+
+  <div class="ctas">
+    <a class="btn primary" id="download" href="/download/Cuplock_3.0.0_x64-setup.exe" download>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
+      Baixar app
+    </a>
+    <a class="btn ghost" href="/app/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+      Navegador
+    </a>
+  </div>
+  <p class="meta" id="meta">Windows 10 e 11 · grátis</p>
+
+  <div class="features">
+    <span class="chip">💬 Servidores e DMs</span><span class="chip">📞 Calls de voz e vídeo</span><span class="chip">🖥️ Compartilhar tela</span>
+    <span class="chip">🎮 Mostra o que você está jogando</span><span class="chip">📷 Fotos</span><span class="chip">🎨 Totalmente personalizável</span><span class="chip">🚀 Atualiza sozinho</span>
+  </div>
+</main>
+<footer>© Cuplock</footer>
+<div class="note" id="note"></div>
+
+<script src="/app/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+// "Baixar app" sempre aponta para a versão mais nova publicada no Supabase (bucket "releases").
+// Se não houver nenhuma lá, usa o instalador que está neste site (/download).
+(async () => {
+  const btn = document.getElementById("download"), meta = document.getElementById("meta");
+  const cmp = (a, b) => { const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); return 0; };
+  let version = "3.0.0", size = 1627640;
+  try {
+    const c = window.CUPLOCK_CONFIG;
+    if (c?.SUPABASE_URL && window.supabase) {
+      const sb = window.supabase.createClient(c.SUPABASE_URL, c.SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+      const { data } = await sb.storage.from("releases").list("", { limit: 200 });
+      let best = null;
+      for (const f of data || []) {
+        const m = /^Cuplock_(\d+\.\d+\.\d+)_x64-setup\.exe$/i.exec(f.name || "");
+        if (m && (!best || cmp(m[1], best.v) > 0)) best = { v: m[1], name: f.name, size: f.metadata?.size };
+      }
+      if (best && cmp(best.v, version) >= 0) {
+        btn.href = sb.storage.from("releases").getPublicUrl(best.name).data.publicUrl;
+        version = best.v; size = best.size || 0;
+      }
+    }
+  } catch { /* fica com o arquivo local */ }
+  meta.textContent = `Versão ${version}${size ? ` · ${(size / 1048576).toFixed(1)} MB` : ""} · Windows 10 e 11 · grátis`;
+
+  const note = document.getElementById("note");
+  const isWin = /Windows/i.test(navigator.userAgent), isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  btn.addEventListener("click", () => {
+    if (!isWin) {
+      note.innerHTML = `<b>O app de PC é para Windows.</b> No ${isMobile ? "celular" : "seu sistema"}, use o botão <b>Navegador</b> — é o mesmo Cuplock, com as mesmas conversas.`;
+      note.style.display = "block"; setTimeout(() => (note.style.display = "none"), 7000);
+      return;
+    }
+    note.innerHTML = `<b>Baixando…</b> Abra o arquivo e siga a instalação. Se o Windows mostrar “O Windows protegeu o computador”, clique em <b>Mais informações → Executar assim mesmo</b>.`;
+    note.style.display = "block"; setTimeout(() => (note.style.display = "none"), 12000);
+  });
+})();
+</script>
+</body>
+</html>
