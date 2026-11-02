@@ -16,3 +16,7 @@ O botão **Baixar app** sempre pega a versão mais nova que estiver no Supabase
 ## Atualizar a versão de navegador
 Quando mudar o app, copie de novo os arquivos de `client/` do projeto Cuplock para `app/` aqui
 (menos o `supabase.js`) e envie pro GitHub — a Vercel publica sozinha.
+
+## Android
+O botão **Android** aparece sozinho quando houver um `Cuplock_X.Y.Z.apk` no Supabase (Storage → `releases`).
+Quem abre o site pelo celular Android baixa o APK direto no botão **Baixar app**.

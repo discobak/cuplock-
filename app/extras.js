@@ -84,8 +84,9 @@ async function sendWithFiles(cid, text) {
     if (currentChannel() === cid) appendMessage(S.msgs[cid].at(-1));
   }
 }
-function attachHtml(a) {
+function attachHtml(a, mine) {
   if (!a?.url || !(SAFE_URL.test(a.url) || a.local)) return "";
+  if (a.type?.startsWith("audio")) return voiceHtml(a.url, a.duration, mine);
   const ratio = a.w && a.h ? `aspect-ratio:${a.w}/${a.h};` : "";
   return `<div class="att" onclick="openImage('${esc(a.url)}','${esc(a.name || "imagem")}')"><img src="${esc(a.url)}" loading="lazy" alt="${esc(a.name || "")}" style="${ratio}"></div>`;
 }
@@ -448,7 +449,7 @@ function renderCallUI() {
     c.innerHTML = `<button class="cbtn ${call.mic ? "" : "off"}" title="${call.mic ? "Silenciar" : "Ativar microfone"}" onclick="toggleMic()">${call.mic ? CI.mic : CI.micOff}</button>
       <button class="cbtn ${call.deaf ? "off" : ""}" title="${call.deaf ? "Voltar a ouvir" : "Ensurdecer"}" onclick="toggleDeaf()">${call.deaf ? CI.deaf : CI.headset}</button>
       <button class="cbtn ${call.cam ? "on" : ""}" title="${call.cam ? "Desligar câmera" : "Ligar câmera"}" onclick="toggleCam()">${call.cam ? CI.cam : CI.camOff}</button>
-      <button class="cbtn ${call.screen ? "on" : ""}" title="${call.screen ? "Parar de compartilhar" : "Compartilhar tela"}" onclick="toggleScreen()">${CI.screen}</button>
+      ${navigator.mediaDevices?.getDisplayMedia ? `<button class="cbtn ${call.screen ? "on" : ""}" title="${call.screen ? "Parar de compartilhar" : "Compartilhar tela"}" onclick="toggleScreen()">${CI.screen}</button>` : ""}
       <button class="cbtn" title="Tela cheia" onclick="document.getElementById('callpanel').classList.toggle('full')">${CI.expand}</button>
       <button class="cbtn danger" title="Sair da call" onclick="leaveCall()">${CI.hang}</button>`;
   }
@@ -531,7 +532,11 @@ function voiceSettingsHtml() {
 }
 
 // ================================================================ ATUALIZAÇÃO AUTOMÁTICA
-async function appVersion() { try { return await window.__TAURI__.app.getVersion(); } catch { return VERSION; } }
+const IS_ANDROID = /CuplockAndroid\//.test(navigator.userAgent);
+async function appVersion() {
+  if (IS_ANDROID) { const m = /CuplockAndroid\/(\d+\.\d+\.\d+)/.exec(navigator.userAgent); return m ? m[1] : VERSION; }
+  try { return await window.__TAURI__.app.getVersion(); } catch { return VERSION; }
+}
 function cmpVer(a, b) { const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); return 0; }
 let updateInfo = null, updateT = null;
 async function latestFromSupabase() {
@@ -540,7 +545,7 @@ async function latestFromSupabase() {
   if (error) throw new Error(trErr(error.message));
   let best = null;
   for (const f of data || []) {
-    const m = /^Cuplock_(\d+\.\d+\.\d+)_x64-setup\.exe$/i.exec(f.name || "");
+    const m = (IS_ANDROID ? /^Cuplock_(\d+\.\d+\.\d+)\.apk$/i : /^Cuplock_(\d+\.\d+\.\d+)_x64-setup\.exe$/i).exec(f.name || "");
     if (m && (!best || cmpVer(m[1], best.version) > 0)) best = { version: m[1], name: f.name, size: f.metadata?.size || 0 };
   }
   if (best) best.url = sb.storage.from("releases").getPublicUrl(best.name).data.publicUrl;
@@ -551,11 +556,11 @@ async function latestFromGitHub(repo) {
   if (r.status === 404) return null;
   if (!r.ok) throw new Error("GitHub respondeu " + r.status);
   const rel = await r.json(), version = String(rel.tag_name || "").replace(/^v/, "");
-  const asset = (rel.assets || []).find(a => /-setup\.exe$/i.test(a.name));
+  const asset = (rel.assets || []).find(a => (IS_ANDROID ? /\.apk$/i : /-setup\.exe$/i).test(a.name));
   return asset && /^\d+\.\d+\.\d+$/.test(version) ? { version, url: asset.browser_download_url, size: asset.size } : null;
 }
 async function checkUpdate(manual) {
-  if (!window.__TAURI__?.core?.invoke) { if (manual) toast("Atualização automática só no app de PC."); return; }
+  if (!window.__TAURI__?.core?.invoke && !IS_ANDROID) { if (manual) toast("Atualização automática só nos apps de PC e Android."); return; }
   const repo = window.CUPLOCK_CONFIG?.UPDATE_REPO;
   try {
     const found = [await latestFromSupabase().catch(e => { if (manual) console.warn(e); return null; })];
@@ -568,11 +573,11 @@ async function checkUpdate(manual) {
 }
 function showUpdateCard() {
   if (!updateInfo || document.getElementById("updcard")) return;
-  const auto = S.prefs.autoUpdate !== false && !call;
+  const auto = S.prefs.autoUpdate !== false && !call && !IS_ANDROID;
   const el = Object.assign(document.createElement("div"), { id: "updcard", className: "updcard" });
   el.innerHTML = `<div style="font-size:26px">🚀</div><div style="flex:1;min-width:0"><b>Cuplock ${esc(updateInfo.version)} disponível</b>
     <small>${auto ? `Atualizando em <span id="updcount">10</span> s…` : `${fmtBytes(updateInfo.size || 0)} · leva menos de 1 minuto`}</small></div>
-    <button class="btn sm" onclick="installUpdate()">Atualizar agora</button><button class="icon-btn" title="Depois" onclick="clearInterval(window.__updc);this.parentNode.remove()">${ICON.x}</button>`;
+    <button class="btn sm" onclick="installUpdate()">${IS_ANDROID ? "Baixar" : "Atualizar agora"}</button><button class="icon-btn" title="Depois" onclick="clearInterval(window.__updc);this.parentNode.remove()">${ICON.x}</button>`;
   document.body.appendChild(el);
   if (auto) {
     let n = 10;
@@ -581,6 +586,7 @@ function showUpdateCard() {
 }
 async function installUpdate() {
   if (!updateInfo) return;
+  if (IS_ANDROID) { location.href = updateInfo.url; toast("Abrindo o download — depois toque no arquivo para instalar."); return; }
   if (call && !confirm("Você está em uma call. Atualizar agora vai encerrar a call. Continuar?")) return;
   clearInterval(window.__updc);
   const card = document.getElementById("updcard");

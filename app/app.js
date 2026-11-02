@@ -297,6 +297,7 @@ function connect() {
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "channels" }, p => onEvent({ type: "channel_create", channel: p.new }))
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "members" }, p => onEvent({ type: "member_join", ...p.new }))
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, p => onEvent({ type: "user_update", user: p.new }))
+    .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, p => { feedEvent(p.eventType, p.eventType === "DELETE" ? p.old : p.new); if (p.eventType === "INSERT" && !p.new.parent_id && S.route.name !== "feed") renderChrome(); })
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "friends", filter: `user_id=eq.${me}` }, p => onEvent({ type: "friend_added", id: p.new.friend_id }))
     .on("postgres_changes", { event: "DELETE", schema: "public", table: "friends" }, p => p.old.user_id === me && onEvent({ type: "friend_removed", id: p.old.friend_id }))
     .subscribe(status => {
@@ -388,7 +389,7 @@ function notify(m) {
     o.frequency.value = 880; g.gain.setValueAtTime(.06, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(.0001, audioCtx.currentTime + .25);
     o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + .25);
   } catch {}
-  try { if (document.hidden && Notification.permission === "granted") new Notification(dname(S.users[m.author]) || "Cuplock", { body: (m.content || "📷 Foto").slice(0, 120), tag: m.channel }); } catch {}
+  try { if (document.hidden && Notification.permission === "granted") new Notification(dname(S.users[m.author]) || "Cuplock", { body: (m.content || (m.attachment?.type?.startsWith("audio") ? "🎙️ Mensagem de voz" : "📷 Foto")).slice(0, 120), tag: m.channel }); } catch {}
 }
 
 async function logout() {
@@ -407,7 +408,7 @@ const ROUTES = [
   ["/setup", "setup"], ["/login", "login"], ["/pwa", "pwa"], ["/dev", "dev"],
   ["/invite/:code", "invite"], ["/bot/:id", "bot"], ["/user/:id", "bot"],
   ["/discover", "discover"], ["/settings", "settings"], ["/settings/:tab", "settings"],
-  ["/friends", "friends"], ["/dm/:uid", "dm"],
+  ["/friends", "friends"], ["/dm/:uid", "dm"], ["/feed", "feed"], ["/post/:id", "post"],
   ["/server/:sid/channel/:cid", "channel"], ["/server/:sid", "server"], ["/", "home"],
 ];
 const PUBLIC = new Set(["setup", "login", "pwa", "dev", "invite"]);
@@ -500,6 +501,8 @@ function renderShell() {
   renderChrome();
   const main = $(".main", app);
   if (r.name === "friends") renderFriends(main);
+  else if (r.name === "feed") renderFeed(main);
+  else if (r.name === "post") renderPostPage(main);
   else if (r.name === "discover") renderDiscover(main);
   else if (r.name === "bot") renderProfile(main);
   else if (r.name === "channel" || r.name === "dm") renderChat(main);
@@ -510,7 +513,7 @@ function renderShell() {
 function renderChrome() {
   if (!$(".rail", app) || !S.me) return;
   const r = S.route, sid = r.params.sid, me = uid();
-  const homeOn = ["friends", "dm", "bot", "settings"].includes(r.name);
+  const homeOn = ["friends", "dm", "bot", "settings", "feed", "post"].includes(r.name);
   const dmUnread = [...S.unread].filter(c => c.startsWith("dm:")).length;
   $(".rail", app).innerHTML = h`
     <a class="pill logo ${homeOn ? "on" : ""}" href="/friends" data-link data-tip="Início"><img src="icon.svg" width="30" alt="Cuplock">${dmUnread ? '<span class="badge"></span>' : ""}</a>
@@ -540,6 +543,7 @@ function renderChrome() {
       <div class="side-head"><button class="input" style="text-align:left;color:var(--fg3);padding:8px 12px;font-size:13.5px" onclick="quickSwitcher()">🔎 Buscar… <span style="float:right;opacity:.6">Ctrl K</span></button></div>
       <div class="side-scroll">
         <a class="item ${r.name === "friends" ? "on" : ""}" href="/friends" data-link onclick="closeNav()"><span class="hash">${ICON.friends.replace("<svg", '<svg width="19"')}</span><span class="grow">Amigos</span></a>
+        <a class="item ${["feed", "post"].includes(r.name) ? "on" : ""}" href="/feed" data-link onclick="closeNav()"><span class="hash" style="font-size:17px">🌊</span><span class="grow">Feed <span class="muted" style="font-weight:500">(Cupdive)</span></span>${FEED.fresh.length ? `<span class="incall" style="color:var(--accent)">${FEED.fresh.length}</span>` : ""}</a>
         <a class="item ${r.name === "discover" ? "on" : ""}" href="/discover" data-link onclick="closeNav()"><span class="hash">${ICON.compass.replace("<svg", '<svg width="19"')}</span><span class="grow">Explorar</span></a>
         <div class="side-label"><span>Conversas</span></div>
         ${dmList.length ? dmList.map(id => { const u = S.users[id], c = dmId(me, id); return `<a class="item ${r.params.uid === id ? "on" : ""} ${S.unread.has(c) && r.params.uid !== id ? "unread" : ""}" href="/dm/${id}" data-link onclick="closeNav()">${avatar(u)}<span class="grow">${uname(u)}<span class="sub">${activityLine(u) || statusLabel[effStatus(u)]}</span></span></a>`; })
@@ -596,6 +600,7 @@ async function renderChat(main) {
       <div class="composer"><div id="pending" class="pending" style="display:none"></div><div class="composer-box">
         <button class="icon-btn attach-btn" title="Enviar fotos" onclick="pickFile('image/png,image/jpeg,image/webp,image/gif',true).then(addFiles)">${ICON.plus}</button>
         <textarea id="input" rows="1" maxlength="2000" placeholder="${esc(placeholder)}" autocomplete="off"></textarea>
+        <button class="icon-btn" title="Mensagem de voz" onclick="chatVoice()" style="font-size:18px">🎙️</button>
         <button class="send-btn" id="sendBtn" title="Enviar">${ICON.send}</button></div>
         <div class="typing" id="typing"></div></div>
     </div>${showMembers ? '<aside class="members" id="members"></aside>' : ""}</div>`;
@@ -651,7 +656,7 @@ function renderBubbles(list) {
     const u = S.users[first.author], mine = first.author === me;
     out += `<div class="bgroup ${mine ? "mine" : ""}">${mine ? "" : `<div onclick="profilePopout(event,'${first.author}')" style="cursor:pointer">${avatar(u, "", false)}</div>`}
       <div class="bcol">${mine ? "" : `<div class="bname" style="color:${esc(u?.color)}" onclick="profilePopout(event,'${first.author}')">${uname(u)}<time>${fmtTime(first.ts)}</time></div>`}
-      ${run.map(m => `<div class="bubble ${m.attachment ? "photo" : ""} ${m.attachment && !m.content ? "only" : ""} ${m.pending ? "pending" : ""} ${m.failed ? "failed msg" : ""}" data-id="${m.id}" title="${fmtDay(m.ts)} ${fmtTime(m.ts)}"${mine && !m.pending && !m.failed ? ` oncontextmenu="msgMenu(event,'${m.id}')"` : ""}>${m.attachment ? attachHtml(m.attachment) : ""}${m.content ? `<div class="text">${md(m.content)}</div>` : ""}</div>`).join("")}
+      ${run.map(m => `<div class="bubble ${m.attachment ? "photo" : ""} ${m.attachment && !m.content ? "only" : ""} ${m.pending ? "pending" : ""} ${m.failed ? "failed msg" : ""}" data-id="${m.id}" title="${fmtDay(m.ts)} ${fmtTime(m.ts)}"${mine && !m.pending && !m.failed ? ` oncontextmenu="msgMenu(event,'${m.id}')"` : ""}>${m.attachment ? attachHtml(m.attachment, mine) : ""}${m.content ? `<div class="text">${md(m.content)}</div>` : ""}</div>`).join("")}
       </div></div>`;
     i += run.length;
   }
@@ -960,7 +965,7 @@ function renderSettings() {
       <button class="btn ghost sm" onclick="Notification.requestPermission().then(renderSettings)">Ativar</button></div>
       <p class="muted small" style="margin-top:12px">Com o status <b>Não perturbe</b>, nenhum som toca.</p>`,
     about: h`<h2>Sobre</h2><p>Cuplock <span id="appver">${VERSION}</span></p>
-      <div class="row"><div class="l"><b>Atualizações</b><span>${window.__TAURI__ ? "Verifica sozinho ao abrir e a cada 3 horas" : "Só no app de PC"}</span></div><button class="btn ghost sm" onclick="checkUpdate(true)">Procurar atualização</button></div>
+      <div class="row"><div class="l"><b>Atualizações</b><span>${window.__TAURI__ || IS_ANDROID ? "Verifica sozinho ao abrir e a cada 3 horas" : "Só nos apps de PC e Android"}</span></div><button class="btn ghost sm" onclick="checkUpdate(true)">Procurar atualização</button></div>
       <div class="row"><div class="l"><b>Instalar atualizações automaticamente</b><span>Baixa e reinicia sozinho (avisa 10 s antes; nunca durante uma call)</span></div><button class="toggle ${S.prefs.autoUpdate !== false ? "on" : ""}" onclick="setPref('autoUpdate',S.prefs.autoUpdate===false);renderSettings()"></button></div><div class="card" style="padding:20px;display:flex;gap:16px;align-items:center"><img src="icon.svg" width="56"><div><b style="font-size:18px">Cuplock</b><div class="muted small">App de mensagens feito em Rust (Tauri) + Supabase.</div></div></div>
       <div class="row"><div class="l"><b>Ferramentas de desenvolvedor</b><span>Conexão, rotas e eventos ao vivo</span></div><a class="btn ghost sm" href="/dev" data-link>Abrir</a></div>
       <div class="row"><div class="l"><b>Atalhos</b><span><code>Ctrl K</code> busca rápida · <code>Esc</code> fechar · <code>Shift+Enter</code> nova linha</span></div></div>`,
@@ -1279,7 +1284,7 @@ function quickSwitcher() {
   const items = [
     ...S.servers.flatMap(s => s.channels.map(c => ({ label: `# ${c.name}`, sub: s.name, href: `/server/${s.id}/channel/${c.id}` }))),
     ...S.friends.map(id => S.users[id]).filter(Boolean).map(u => ({ label: `@ ${dname(u)}`, sub: "@" + u.username, href: `/dm/${u.id}` })),
-    { label: "🧭 Explorar", sub: "Encontrar comunidades", href: "/discover" }, { label: "⚙️ Configurações", sub: "", href: "/settings" }, { label: "🎨 Aparência", sub: "Personalizar", href: "/settings/appearance" }, { label: "🛠 Desenvolvedor", sub: "", href: "/dev" },
+    { label: "🌊 Feed (Cupdive)", sub: "Posts da galera", href: "/feed" }, { label: "🧭 Explorar", sub: "Encontrar comunidades", href: "/discover" }, { label: "⚙️ Configurações", sub: "", href: "/settings" }, { label: "🎨 Aparência", sub: "Personalizar", href: "/settings/appearance" }, { label: "🛠 Desenvolvedor", sub: "", href: "/dev" },
   ];
   modal(`<input class="input" id="qs" placeholder="Para onde você quer ir?" style="font-size:17px;padding:14px"><div id="qsl" style="margin-top:10px;max-height:340px;overflow-y:auto"></div>`, m => {
     let sel = 0, cur = items;

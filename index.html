@@ -75,6 +75,10 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
       Baixar app
     </a>
+    <a class="btn ghost" id="android" href="#" style="display:none" download>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.5 11.5 0 0 0-9.84 0L5.22 5.92a.38.38 0 0 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg>
+      Android
+    </a>
     <a class="btn ghost" href="/app/">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
       Navegador
@@ -98,7 +102,8 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
 (async () => {
   const btn = document.getElementById("download"), meta = document.getElementById("meta");
   const cmp = (a, b) => { const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); return 0; };
-  let version = "3.0.0", size = 1627640;
+  let version = "3.0.0", size = 1627640, apk = null;
+  const isAndroid = /Android/i.test(navigator.userAgent);
   try {
     const c = window.CUPLOCK_CONFIG;
     if (c?.SUPABASE_URL && window.supabase) {
@@ -106,20 +111,35 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
       const { data } = await sb.storage.from("releases").list("", { limit: 200 });
       let best = null;
       for (const f of data || []) {
-        const m = /^Cuplock_(\d+\.\d+\.\d+)_x64-setup\.exe$/i.exec(f.name || "");
+        const m = /^Cuplock_(\d+\.\d+\.\d+)_x64-setup\.exe$/i.exec(f.name || ""), a = /^Cuplock_(\d+\.\d+\.\d+)\.apk$/i.exec(f.name || "");
         if (m && (!best || cmp(m[1], best.v) > 0)) best = { v: m[1], name: f.name, size: f.metadata?.size };
+        if (a && (!apk || cmp(a[1], apk.v) > 0)) apk = { v: a[1], name: f.name, size: f.metadata?.size };
       }
       if (best && cmp(best.v, version) >= 0) {
         btn.href = sb.storage.from("releases").getPublicUrl(best.name).data.publicUrl;
         version = best.v; size = best.size || 0;
       }
+      if (apk) apk.url = sb.storage.from("releases").getPublicUrl(apk.name).data.publicUrl;
     }
   } catch { /* fica com o arquivo local */ }
-  meta.textContent = `Versão ${version}${size ? ` · ${(size / 1048576).toFixed(1)} MB` : ""} · Windows 10 e 11 · grátis`;
+  const andBtn = document.getElementById("android");
+  if (apk) { andBtn.href = apk.url; andBtn.style.display = ""; }
+  if (isAndroid && apk) {
+    // no celular Android, o botão principal já baixa o APK
+    btn.href = apk.url; andBtn.style.display = "none";
+    meta.textContent = `Android · versão ${apk.v}${apk.size ? ` · ${(apk.size / 1048576).toFixed(1)} MB` : ""} · grátis`;
+  } else {
+    meta.textContent = `Versão ${version}${size ? ` · ${(size / 1048576).toFixed(1)} MB` : ""} · Windows 10 e 11${apk ? " · Android" : ""} · grátis`;
+  }
 
   const note = document.getElementById("note");
   const isWin = /Windows/i.test(navigator.userAgent), isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  andBtn.addEventListener("click", () => {
+    note.innerHTML = `<b>Baixando o APK…</b> Abra o arquivo no celular. Se o Android pedir, permita <b>instalar apps desta fonte</b>.`;
+    note.style.display = "block"; setTimeout(() => (note.style.display = "none"), 10000);
+  });
   btn.addEventListener("click", () => {
+    if (isAndroid && apk) { note.innerHTML = `<b>Baixando o APK…</b> Abra o arquivo no celular. Se o Android pedir, permita <b>instalar apps desta fonte</b>.`; note.style.display = "block"; setTimeout(() => (note.style.display = "none"), 10000); return; }
     if (!isWin) {
       note.innerHTML = `<b>O app de PC é para Windows.</b> No ${isMobile ? "celular" : "seu sistema"}, use o botão <b>Navegador</b> — é o mesmo Cuplock, com as mesmas conversas.`;
       note.style.display = "block"; setTimeout(() => (note.style.display = "none"), 7000);
