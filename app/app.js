@@ -4,7 +4,7 @@
    Supabase: contas (e-mail + senha), banco e tempo real.
    ============================================================ */
 
-const VERSION = "3.0.0";
+const VERSION = "3.2.0";
 const DEFAULT_PREFS = {
   theme: "meianoite", accent: "#a78bfa", accent2: "#f472b6", wallpaper: "aurora", wallUrl: "", wallBlur: 0, wallDim: 30, wallAnim: true,
   panelOpacity: 78, glass: true, radius: 20, gap: 10, font: "jakarta", fontSize: 15, msgStyle: "bubbles", avatarShape: "squircle",
