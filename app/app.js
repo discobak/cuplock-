@@ -4,7 +4,7 @@
    Supabase: contas (e-mail + senha), banco e tempo real.
    ============================================================ */
 
-const VERSION = "3.9.0";
+const VERSION = "4.0.0";
 const DEFAULT_PREFS = {
   theme: "meianoite", accent: "#a78bfa", accent2: "#f472b6", wallpaper: "aurora", wallUrl: "", freeLayout: false, layout: {}, wallBlur: 0, wallDim: 30, wallAnim: true,
   panelOpacity: 78, glass: true, radius: 20, gap: 10, font: "jakarta", fontSize: 15, msgStyle: "bubbles", avatarShape: "squircle",
@@ -303,7 +303,7 @@ function connectPresence() {
     .on("presence", { event: "sync" }, () => {
       const st = presenceCh.presenceState(), next = {};
       for (const id in st) next[id] = st[id][0] || {};
-      const sig = o => JSON.stringify(Object.keys(o).sort().map(k => [k, o[k].activity?.name, o[k].call, o[k].plat, o[k].ver]));
+      const sig = o => JSON.stringify(Object.keys(o).sort().map(k => [k, o[k].activity?.name, o[k].activity?.details, o[k].activity?.state, o[k].call, o[k].plat, o[k].ver]));
       const changed = sig(next) !== sig(S.online);
       S.online = next;
       ensureUsers(Object.keys(next)).catch(() => {});
@@ -987,7 +987,7 @@ function bannerCss(u) {
 function profileCard(u, actions) {
   const me = u.id === uid();
   const shared = S.servers.filter(s => s.members.includes(u.id) && !me);
-  return h`<div class="profile-card" style="max-width:600px"><div class="b" style="${bannerCss(u)}"></div><div class="c">
+  return h`<div class="profile-card" style="max-width:600px">${stickersHtml(u)}<div class="b" style="${bannerCss(u)}"></div><div class="c">
     <div style="display:flex;justify-content:space-between;align-items:flex-end">${avatar(u, "xl")}
       ${actions && !me ? `<div style="display:flex;gap:8px;padding-bottom:6px">${S.friends.includes(u.id) ? "" : `<button class="btn ghost sm" onclick="addFriend('${esc(u.username)}').then(render).catch(e=>toast(e.message))">Adicionar amigo</button>`}<a class="btn sm" href="/dm/${u.id}" data-link>Mensagem</a></div>` : ""}</div>
     <h2 style="margin-top:8px">${uname(u)}${roleBadge(u)}</h2><div class="pronouns">@${esc(u.username)}${u.pronouns ? ` · ${esc(u.pronouns)}` : ""}</div>
@@ -1003,7 +1003,7 @@ function profilePopout(e, id) {
   const u = S.users[id]; if (!u) return;
   if (u.isBot) return toast(`${u.username} é um bot feito por ${dname(S.users[u.botOwner]) || "alguém"}.`);
   const me = u.id === uid();
-  showCtx(e, `<div style="width:300px;margin:-6px"><div class="profile-card" style="border:0"><div class="b" style="height:70px;${bannerCss(u)}"></div><div class="c" style="padding:0 14px 14px">
+  showCtx(e, `<div style="width:300px;margin:-6px"><div class="profile-card" style="border:0">${stickersHtml(u)}<div class="b" style="height:70px;${bannerCss(u)}"></div><div class="c" style="padding:0 14px 14px">
     ${avatar(u, "xl")}<h3 style="margin-top:6px">${uname(u)}${roleBadge(u)}</h3><div class="pronouns">@${esc(u.username)}${u.pronouns ? ` · ${esc(u.pronouns)}` : ""}</div>
     ${u.custom_status || u.status_emoji ? `<div class="cstatus small">${esc(u.status_emoji || "")} ${emojify(esc(u.custom_status || ""))}</div>` : `<div class="muted small">${statusLabel[effStatus(u)]}</div>`}
     ${activityCard(u)}${u.bio ? `<p class="small text" style="margin-top:10px">${md(u.bio)}</p>` : ""}

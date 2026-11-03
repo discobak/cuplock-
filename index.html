@@ -20,10 +20,13 @@ body{overflow-x:hidden}
 a{color:inherit;text-decoration:none}
 
 /* fundo aurora */
+@property --bgc{syntax:"<color>";inherits:true;initial-value:#0c0a12}
+:root{--bgc:#0c0a12;transition:--a .9s,--b .9s,--bgc .9s}
+html,body{background:var(--bgc)!important}
 .bg{position:fixed;inset:-20%;z-index:0;background:
-  radial-gradient(40% 35% at 20% 15%,#a78bfa55,transparent 70%),
-  radial-gradient(35% 35% at 85% 80%,#f472b64d,transparent 70%),
-  radial-gradient(30% 30% at 70% 20%,#60a5fa2e,transparent 70%),var(--bg);
+  radial-gradient(40% 35% at 20% 15%,color-mix(in srgb,var(--a) 36%,transparent),transparent 70%),
+  radial-gradient(35% 35% at 85% 80%,color-mix(in srgb,var(--b) 32%,transparent),transparent 70%),
+  radial-gradient(30% 30% at 70% 20%,color-mix(in srgb,var(--a) 18%,transparent),transparent 70%),var(--bgc);
   animation:drift 22s ease-in-out infinite alternate}
 @keyframes drift{from{transform:translate(0,0) rotate(0)}to{transform:translate(-4%,3%) rotate(4deg)}}
 .grain{position:fixed;inset:0;z-index:0;opacity:.06;pointer-events:none;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:3px 3px}
@@ -155,7 +158,7 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
 (async () => {
   const btn = document.getElementById("download"), meta = document.getElementById("meta");
   const cmp = (a, b) => { const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); return 0; };
-  let version = "3.0.0", size = 1627640, apk = null;
+  let version = "3.0.0", size = 1627640, apk = null, lin = null;
   const isAndroid = /Android/i.test(navigator.userAgent);
   try {
     const c = window.CUPLOCK_CONFIG;
@@ -167,6 +170,8 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
         const m = /^Cuplock_(\d+\.\d+\.\d+)_x64-setup\.exe$/i.exec(f.name || ""), a = /^Cuplock_(\d+\.\d+\.\d+)\.apk$/i.exec(f.name || "");
         if (m && (!best || cmp(m[1], best.v) > 0)) best = { v: m[1], name: f.name, size: f.metadata?.size };
         if (a && (!apk || cmp(a[1], apk.v) > 0)) apk = { v: a[1], name: f.name, size: f.metadata?.size };
+        const l = /^Cuplock_(\d+\.\d+\.\d+)_amd64\.AppImage$/i.exec(f.name || "");
+        if (l && (!lin || cmp(l[1], lin.v) > 0)) lin = { v: l[1], name: f.name, size: f.metadata?.size, url: sb.storage.from("releases").getPublicUrl(f.name).data.publicUrl };
       }
       if (best && cmp(best.v, version) >= 0) {
         btn.href = sb.storage.from("releases").getPublicUrl(best.name).data.publicUrl;
@@ -177,12 +182,16 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
   } catch { /* fica com o arquivo local */ }
   const andBtn = document.getElementById("android");
   if (apk) { andBtn.href = apk.url; andBtn.style.display = ""; }
-  if (isAndroid && apk) {
+  const isLinux = /Linux/i.test(navigator.userAgent) && !isAndroid;
+  if (isLinux && lin) {
+    btn.href = lin.url;
+    meta.innerHTML = `Linux (AppImage) · versão ${lin.v}${lin.size ? ` · ${(lin.size / 1048576).toFixed(1)} MB` : ""} · grátis — depois de baixar: <code>chmod +x</code> e abra`;
+  } else if (isAndroid && apk) {
     // no celular Android, o botão principal já baixa o APK
     btn.href = apk.url; andBtn.style.display = "none";
     meta.textContent = `Android · versão ${apk.v}${apk.size ? ` · ${(apk.size / 1048576).toFixed(1)} MB` : ""} · grátis`;
   } else {
-    meta.textContent = `Versão ${version}${size ? ` · ${(size / 1048576).toFixed(1)} MB` : ""} · Windows 10 e 11${apk ? " · Android" : ""} · grátis`;
+    meta.textContent = `Versão ${version}${size ? ` · ${(size / 1048576).toFixed(1)} MB` : ""} · Windows 10 e 11${apk ? " · Android" : ""}${lin ? " · Linux" : ""} · grátis`;
   }
 
   const note = document.getElementById("note");
@@ -221,6 +230,8 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
   const apply = i => {
     const [n, a, b, d0, d1, d3, fg, fg2, r] = T[i], st = document.documentElement.style;
     st.setProperty("--a", a); st.setProperty("--b", b);
+    // o fundo do site acompanha o tema (mantendo escuro para o texto continuar legível)
+    st.setProperty("--bgc", `color-mix(in srgb, ${d0} ${/^#[c-f]/i.test(d0) ? 12 : 55}%, #0a0810)`);
     Object.entries({ "--d0": d0, "--d1": d1, "--d3": d3, "--dfg": fg, "--dfg2": fg2, "--dr": r + "px" }).forEach(([k, v]) => demo.style.setProperty(k, v));
     lbl.textContent = n; pal.querySelectorAll(".sw").forEach((s, k) => s.classList.toggle("on", k === i));
   };

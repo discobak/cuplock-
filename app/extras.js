@@ -688,6 +688,9 @@ function voiceSettingsHtml() {
 
 // ================================================================ ATUALIZAÇÃO AUTOMÁTICA
 const IS_ANDROID = /CuplockAndroid\//.test(navigator.userAgent);
+const IS_LINUX_APP = !!window.__TAURI__ && /Linux/i.test(navigator.userAgent) && !IS_ANDROID;
+// nome do instalador de cada sistema no bucket "releases"
+const RELEASE_RE = IS_ANDROID ? /^Cuplock_(\d+\.\d+\.\d+)\.apk$/i : IS_LINUX_APP ? /^Cuplock_(\d+\.\d+\.\d+)_amd64\.AppImage$/i : /^Cuplock_(\d+\.\d+\.\d+)_x64-setup\.exe$/i;
 async function appVersion() {
   if (IS_ANDROID) { const m = /CuplockAndroid\/(\d+\.\d+\.\d+)/.exec(navigator.userAgent); return m ? m[1] : VERSION; }
   try { return await window.__TAURI__.app.getVersion(); } catch { return VERSION; }
@@ -700,7 +703,7 @@ async function latestFromSupabase() {
   if (error) throw new Error(trErr(error.message));
   let best = null;
   for (const f of data || []) {
-    const m = (IS_ANDROID ? /^Cuplock_(\d+\.\d+\.\d+)\.apk$/i : /^Cuplock_(\d+\.\d+\.\d+)_x64-setup\.exe$/i).exec(f.name || "");
+    const m = RELEASE_RE.exec(f.name || "");
     if (m && (!best || cmpVer(m[1], best.version) > 0)) best = { version: m[1], name: f.name, size: f.metadata?.size || 0 };
   }
   if (best) best.url = sb.storage.from("releases").getPublicUrl(best.name).data.publicUrl;
@@ -711,7 +714,7 @@ async function latestFromGitHub(repo) {
   if (r.status === 404) return null;
   if (!r.ok) throw new Error("GitHub respondeu " + r.status);
   const rel = await r.json(), version = String(rel.tag_name || "").replace(/^v/, "");
-  const asset = (rel.assets || []).find(a => (IS_ANDROID ? /\.apk$/i : /-setup\.exe$/i).test(a.name));
+  const asset = (rel.assets || []).find(a => (IS_ANDROID ? /\.apk$/i : IS_LINUX_APP ? /\.AppImage$/i : /-setup\.exe$/i).test(a.name));
   return asset && /^\d+\.\d+\.\d+$/.test(version) ? { version, url: asset.browser_download_url, size: asset.size } : null;
 }
 async function checkUpdate(manual) {
@@ -748,6 +751,10 @@ async function installUpdate() {
   const card = document.getElementById("updcard");
   if (card) card.innerHTML = `<div style="font-size:26px">⏳</div><div style="flex:1"><b>Baixando Cuplock ${esc(updateInfo.version)}…</b><small>O app vai fechar e abrir de novo sozinho.</small></div>`;
   try { await leaveCall(true); await window.__TAURI__.core.invoke("install_update", { url: updateInfo.url }); }
-  catch (e) { card?.remove(); toast("Falha na atualização: " + e); }
+  catch (e) {
+    card?.remove();
+    if (String(e) === "deb") { copy(updateInfo.url); toast("Você instalou pelo .deb: o link da versão nova foi copiado. Baixe e instale por cima (ou use o AppImage, que se atualiza sozinho)."); }
+    else toast("Falha na atualização: " + e);
+  }
 }
 function startUpdateChecks() { clearInterval(updateT); setTimeout(() => checkUpdate(false), 4000); updateT = setInterval(() => checkUpdate(false), 3 * 3600 * 1000); }
