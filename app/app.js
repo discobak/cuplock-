@@ -4,13 +4,13 @@
    Supabase: contas (e-mail + senha), banco e tempo real.
    ============================================================ */
 
-const VERSION = "3.5.0";
+const VERSION = "3.9.0";
 const DEFAULT_PREFS = {
-  theme: "meianoite", accent: "#a78bfa", accent2: "#f472b6", wallpaper: "aurora", wallUrl: "", wallBlur: 0, wallDim: 30, wallAnim: true,
+  theme: "meianoite", accent: "#a78bfa", accent2: "#f472b6", wallpaper: "aurora", wallUrl: "", freeLayout: false, layout: {}, wallBlur: 0, wallDim: 30, wallAnim: true,
   panelOpacity: 78, glass: true, radius: 20, gap: 10, font: "jakarta", fontSize: 15, msgStyle: "bubbles", avatarShape: "squircle",
   reduceMotion: false, sounds: true, enterSends: true, membersOpen: true, time24: true, customCss: "",
   notifySound: "short", desktopNotif: true,
-  showActivity: true, customGames: [], manualActivity: null,
+  showActivity: true, customGames: [], manualActivity: null, savedThemes: [], splashSound: true, collapsedCats: [],
 };
 const THEMES = {
   meianoite: { name: "Meia-noite", bg0: "#0c0a12", bg1: "#16131f", bg3: "#231f30", bg4: "#2e2940", fg: "#efeaf7", fg2: "#b0a9c2", fg3: "#736c85" },
@@ -36,6 +36,12 @@ const THEMES = {
     preview: "linear-gradient(90deg,#1e2124 0 18%,#2e3136 18% 45%,#36393e 45%)",
     kit: { accent: "#7289da", accent2: "#7289da", wallpaper: "liso", wallAnim: false, wallBlur: 0, wallDim: 0, glass: false, panelOpacity: 100, radius: 4, gap: 0, font: "opensans", msgStyle: "classic", avatarShape: "round" } },
 };
+THEMES.natal = { name: "Natal", special: true, bg0: "#0b1a14", bg1: "#10241b", bg3: "#183526", bg4: "#214632", fg: "#f4fbf6", fg2: "#b9d8c4", fg3: "#78a08a",
+  preview: "linear-gradient(160deg,#c1121f 0 30%,#0b3d2a 30% 70%,#f4fbf6 70%)",
+  kit: { accent: "#e63946", accent2: "#2a9d8f", wallpaper: "natal", wallAnim: true, wallBlur: 0, wallDim: 10, glass: true, panelOpacity: 80, radius: 18, gap: 10, font: "nunito", msgStyle: "bubbles", avatarShape: "round" } };
+THEMES.halloween = { name: "Halloween", special: true, bg0: "#0d0812", bg1: "#170f1d", bg3: "#24172d", bg4: "#33203f", fg: "#fbefe3", fg2: "#d6b79c", fg3: "#93776a",
+  preview: "linear-gradient(160deg,#1a0b24 0 40%,#ff7518 40% 62%,#3b1a4a 62%)",
+  kit: { accent: "#ff7518", accent2: "#9d4edd", wallpaper: "halloween", wallAnim: true, wallBlur: 0, wallDim: 15, glass: true, panelOpacity: 82, radius: 16, gap: 10, font: "grotesk", msgStyle: "bubbles", avatarShape: "squircle" } };
 const FONTS = {
   jakarta: ["Plus Jakarta Sans", "Plus+Jakarta+Sans:wght@400;500;600;700;800"], grotesk: ["Space Grotesk", "Space+Grotesk:wght@400;500;600;700"],
   outfit: ["Outfit", "Outfit:wght@400;500;600;700;800"], nunito: ["Nunito", "Nunito:wght@400;600;700;800"],
@@ -50,6 +56,8 @@ const WALLPAPERS = {
   mar: { name: "Mar", css: () => `linear-gradient(170deg, #1cb5e0 0%, #0f4c75 50%, #0b1d33 100%)` },
   pontos: { name: "Pontilhado", css: (p, t) => `radial-gradient(${p.accent}55 1.2px, transparent 1.4px) 0 0/22px 22px, ${t.bg0}` },
   liso: { name: "Liso", css: (p, t) => t.bg0 },
+  natal: { name: "Neve", anim: true, css: () => `radial-gradient(60% 40% at 50% 0%, #e6394633, transparent 70%), radial-gradient(50% 40% at 10% 100%, #2a9d8f44, transparent 70%), linear-gradient(180deg, #0b1a14, #06120c)` },
+  halloween: { name: "Lua cheia", anim: true, css: () => `radial-gradient(9% 12% at 82% 16%, #ffe8b0 0 60%, #ffb34733 75%, transparent 100%), radial-gradient(60% 45% at 50% 100%, #ff751855, transparent 70%), linear-gradient(180deg, #120a1c, #1d0f22 60%, #2a1208)` },
   aero: { name: "Água", anim: true, css: () => `radial-gradient(40% 30% at 82% 10%, #ffffffee, #ffffff00 70%), url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%201440%20320%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20fill-opacity%3D%22.35%22%20d%3D%22M0%20160c120%2040%20240%2060%20360%2040s240-80%20360-80%20240%2060%20360%2080%20240-20%20360-60v180H0z%22/%3E%3Cpath%20fill%3D%22%23ffffff%22%20fill-opacity%3D%22.25%22%20d%3D%22M0%20220c160-40%20320-60%20480-30s320%2070%20480%2060%20320-50%20480-60v130H0z%22/%3E%3C/svg%3E") bottom/100% 42% no-repeat, radial-gradient(120% 55% at 50% 115%, #0a7fb8 0%, #19b3dc 45%, #ffffff00 75%), linear-gradient(180deg, #6fcdfb 0%, #aee6ff 30%, #e6f9ff 52%, #7fdcec 64%, #22a9d6 82%, #0b78b0 100%)` },
   imagem: { name: "Imagem", css: (p, t) => /^https:\/\/[^\s"'()<>\\]+$/.test(p.wallUrl) ? `url("${p.wallUrl}") center/cover no-repeat, ${t.bg0}` : t.bg0 },
 };
@@ -92,9 +100,25 @@ function md(src) {
     .replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>")
     .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>")
     .replace(/~~([^~\n]+)~~/g, "<s>$1</s>")
+    .replace(/__([^_\n]+)__/g, "<u>$1</u>")
+    .replace(/\|\|([^|\n]+)\|\|/g, '<span class="spoiler" onclick="this.classList.add(\'on\')">$1</span>')
+    .replace(/==([^=\n]+)==/g, "<mark>$1</mark>")
     .replace(/\bhttps?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`)
-    .replace(/\bcuplock:([a-z0-9]{4,16})\b/g, '<a href="/invite/$1" data-link>🎟️ convite $1</a>')
+    .replace(/\bcuplock:([a-z0-9]{4,16})\b/g, '<a href="/invite/$1" data-link class="invlink">' + I("ticket", 14) + ' convite $1</a>')
     .replace(/(^|\s)@(\w{2,24})/g, (m, pre, n) => `${pre}<span class="mention">@${n}</span>`);
+  // blocos por linha (título, rodapé, citação, lista) — o bloco já quebra a linha sozinho
+  const ls = s.split("\n"), outL = [];
+  ls.forEach((ln, i) => {
+    let m, blk = true;
+    if ((m = /^(#{1,3}) (.+)$/.exec(ln))) ln = `<span class="mdh h${m[1].length}">${m[2]}</span>`;
+    else if ((m = /^-# (.+)$/.exec(ln))) ln = `<span class="mdsub">${m[1]}</span>`;
+    else if ((m = /^&gt; (.+)$/.exec(ln))) ln = `<span class="mdq">${m[1]}</span>`;
+    else if ((m = /^[-•] (.+)$/.exec(ln))) ln = `<span class="mdli">${m[1]}</span>`;
+    else blk = false;
+    outL.push(ln + (i < ls.length - 1 && !blk ? "\n" : ""));
+  });
+  s = outL.join("");
+  s = emojify(s);
   return s.replace(/\u0000(\d+)\u0000/g, (_, i) => blocks[i]);
 }
 
@@ -151,7 +175,7 @@ S = {
 const uid = () => S.session?.user?.id;
 const dmId = (a, b) => "dm:" + [a, b].sort().join(":");
 const cidFilter = cid => cid.startsWith("dm:") ? { dm_key: cid.slice(3) } : { channel_id: cid };
-const norm = m => ({ id: m.id, channel: m.channel_id || "dm:" + m.dm_key, author: m.author, content: m.content, attachment: m.attachment || null, ts: Date.parse(m.created_at), created: m.created_at });
+const norm = m => ({ id: m.id, channel: m.channel_id || "dm:" + m.dm_key, author: m.bot_id ? "bot:" + m.bot_id : m.author, realAuthor: m.author, content: m.content, attachment: m.attachment || null, reply_to: m.reply_to || null, ts: Date.parse(m.created_at), created: m.created_at });
 const normServer = s => ({ ...s, members: (s.members || []).map(m => m.user_id), channels: (s.channels || []).sort((a, b) => a.created_at.localeCompare(b.created_at)) });
 
 function applyPrefs() {
@@ -164,6 +188,8 @@ function applyPrefs() {
     "--accent": p.accent, "--accent2": p.accent2, "--r": p.radius + "px", "--gap": p.gap + "px", "--fs": p.fontSize + "px",
     "--blur": p.glass ? "22px" : "0px", "--wall-blur": p.wallBlur + "px", "--wall-dim": (p.wallDim / 100).toFixed(2),
   };
+  const lum = hex => { const n = parseInt(String(hex).slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+  vars["--on-accent"] = (lum(p.accent) + lum(p.accent2)) / 2 > .42 ? "#14121a" : "#ffffff";
   for (const k in vars) r.style.setProperty(k, vars[k]);
   r.classList.toggle("light", !!t.light);
   const f = FONTS[p.font] || FONTS.jakarta;
@@ -178,6 +204,7 @@ function applyPrefs() {
   document.body.classList.toggle("round", p.avatarShape === "round");
   document.body.dataset.theme = p.theme;
   setBubbles(p.theme === "aero" && p.wallAnim && !p.reduceMotion);
+  if (typeof setParticles === "function") setParticles(p.wallAnim && !p.reduceMotion ? (p.theme === "natal" || p.wallpaper === "natal" ? "snow" : p.theme === "halloween" || p.wallpaper === "halloween" ? "spooky" : null) : null);
   const cc = document.getElementById("customcss"); if (cc) cc.textContent = p.customCss || "";
 }
 // bolhas subindo (tema Frutiger Aero)
@@ -210,7 +237,9 @@ applyPrefs();
 
 // ---------- dados ----------
 async function ensureUsers(ids) {
-  const miss = [...new Set(ids)].filter(i => i && !S.users[i]);
+  const bots = ids.filter(i => String(i).startsWith("bot:")).map(i => i.slice(4));
+  if (bots.length) await ensureBots(bots);
+  const miss = [...new Set(ids)].filter(i => i && !String(i).startsWith("bot:") && !S.users[i]);
   if (!miss.length) return;
   for (const u of await q(sb.from("profiles").select("*").in("id", miss))) S.users[u.id] = u;
 }
@@ -233,6 +262,7 @@ async function bootstrap() {
   const servers = ids.length ? await q(sb.from("servers").select("*, channels(*), members(user_id)").in("id", ids)) : [];
   S.servers = servers.map(normServer).sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
   S.friends = fr.map(f => f.friend_id);
+  await loadBff(); await loadMyBots();
   await ensureUsers([...S.servers.flatMap(s => s.members), ...S.friends, ...S.recentDms]);
   if (profile.prefs) { S.prefs = Object.assign(S.prefs, profile.prefs); localStorage.setItem("cl.prefs", JSON.stringify(S.prefs)); applyPrefs(); }
   S.loaded = true;
@@ -259,7 +289,7 @@ function sinceTxt(ts) {
 function activityLine(u) {
   const a = activityOf(u);
   if (a) return `<span class="activity">${esc(a.icon || "🎮")} ${a.type === "custom" ? `<b>${esc(a.name)}</b>` : `${ACT_LABEL[a.type] || "Jogando"} <b>${esc(a.name)}</b>`}</span>`;
-  if (u?.custom_status || u?.status_emoji) return `<span class="activity">${esc(u.status_emoji || "")} ${esc(u.custom_status || "")}</span>`;
+  if (u?.custom_status || u?.status_emoji) return `<span class="activity">${esc(u.status_emoji || "")} ${emojify(esc(u.custom_status || ""))}</span>`;
   return "";
 }
 function activityCard(u) {
@@ -273,7 +303,7 @@ function connectPresence() {
     .on("presence", { event: "sync" }, () => {
       const st = presenceCh.presenceState(), next = {};
       for (const id in st) next[id] = st[id][0] || {};
-      const sig = o => JSON.stringify(Object.keys(o).sort().map(k => [k, o[k].activity?.name, o[k].call]));
+      const sig = o => JSON.stringify(Object.keys(o).sort().map(k => [k, o[k].activity?.name, o[k].call, o[k].plat, o[k].ver]));
       const changed = sig(next) !== sig(S.online);
       S.online = next;
       ensureUsers(Object.keys(next)).catch(() => {});
@@ -283,8 +313,8 @@ function connectPresence() {
 }
 function trackPresence() {
   if (!presenceCh) return;
-  if (S.me?.status === "invisible") return presenceCh.untrack();
-  presenceCh.track({ activity: S.prefs.showActivity ? S.myActivity : null, call: typeof call !== "undefined" && call ? call.cid : null, at: Date.now() });
+  if (S.me?.status === "invisible") { ghostPing(); return presenceCh.untrack(); }
+  presenceCh.track({ activity: S.prefs.showActivity ? S.myActivity : null, call: typeof call !== "undefined" && call ? call.cid : null, at: Date.now(), plat: myPlatform(), ver: VERSION });
 }
 let presenceUiT;
 function refreshPresenceUI() {
@@ -341,7 +371,7 @@ function connect() {
     .on("postgres_changes", { event: "DELETE", schema: "public", table: "friends" }, p => p.old.user_id === me && onEvent({ type: "friend_removed", id: p.old.friend_id }))
     .subscribe(status => {
       S.rtStatus = status;
-      if (status === "SUBSCRIBED" && !presenceCh) { connectPresence(); detectActivity(); connectInbox(); startUpdateChecks(); checkAnnouncements(); }
+      if (status === "SUBSCRIBED" && !presenceCh) { connectPresence(); detectActivity(); connectInbox(); connectBff(); startUpdateChecks(); checkAnnouncements(); }
       const up = status === "SUBSCRIBED";
       $("#conn").classList.toggle("show", !up && rtEverUp);
       if (up) { if (rtEverUp) resync(); rtEverUp = true; }
@@ -363,6 +393,7 @@ async function onEvent(ev) {
         if (pend >= 0) list[pend] = m; else if (!list.some(x => x.id === m.id)) list.push(m);
       }
       if (S.typing[m.channel]) delete S.typing[m.channel][m.author];
+      botsOnMessage(m);
       if (currentChannel() === m.channel && document.visibilityState === "visible") appendMessage(m);
       else if (m.author !== me) { S.unread.add(m.channel); notify(m); renderChrome(); }
       break;
@@ -448,7 +479,7 @@ const ROUTES = [
   ["/setup", "setup"], ["/login", "login"], ["/pwa", "pwa"], ["/dev", "dev"],
   ["/invite/:code", "invite"], ["/bot/:id", "bot"], ["/user/:id", "bot"],
   ["/discover", "discover"], ["/settings", "settings"], ["/settings/:tab", "settings"],
-  ["/friends", "friends"], ["/dm/:uid", "dm"], ["/feed", "feed"], ["/post/:id", "post"], ["/admin", "admin"],
+  ["/friends", "friends"], ["/bots", "bots"], ["/bots/:bid", "bots"], ["/dm/:uid", "dm"], ["/feed", "feed"], ["/post/:id", "post"], ["/admin", "admin"],
   ["/server/:sid/channel/:cid", "channel"], ["/server/:sid", "server"], ["/", "home"],
 ];
 const PUBLIC = new Set(["setup", "login", "pwa", "invite"]);
@@ -522,14 +553,18 @@ function currentChannel() {
 function avatar(u, size = "", dot = true) {
   if (!u) u = { username: "?", color: "#666" };
   const img = u.avatar_url && /^https:\/\/[^\s"'()<>\\]+$/.test(u.avatar_url) ? `background:url('${u.avatar_url}') center/cover,${esc(u.color)}` : `background:${esc(u.color)}`;
-  return `<div class="avatar ${size}" style="${img}">${u.avatar_url ? "" : initials(u.username)}${dot ? `<span class="dot ${effStatus(u)}"></span>` : ""}</div>`;
+  return `<div class="avatar ${size}" style="${img}">${u.avatar_url ? "" : initials(u.username)}${dot ? `<span class="dot ${effStatus(u)}${dotExtra(u)}"></span>` : ""}</div>`;
 }
 function roleTag(u) {
-  if (u?.role === "owner") return ' <span class="rtag owner" title="Dono do Cuplock"><span>OWNER</span></span>';
-  if (u?.role === "staff") return ' <span class="rtag staff" title="Equipe do Cuplock">STAFF</span>';
+  if (u?.isBot) return ' <span class="rtag bot">BOT</span>';
   return "";
 }
-function uname(u) { return esc(dname(u)) + roleTag(u); }
+function uname(u) { return emojify(esc(dname(u))) + roleTag(u); }
+function roleBadge(u) {
+  if (u?.role === "owner") return ` <span class="rbadge owner" title="Cuplock Owner">${I("crown", 18)}</span>`;
+  if (u?.role === "staff") return ` <span class="rbadge staff" title="Cuplock Staff">${I("shield", 17)}</span>`;
+  return "";
+}
 const isStaff = () => ["owner", "staff"].includes(S.me?.role);
 const isOwner = () => S.me?.role === "owner";
 
@@ -554,6 +589,7 @@ function renderShell() {
   else if (r.name === "feed") renderFeed(main);
   else if (r.name === "post") renderPostPage(main);
   else if (r.name === "admin") renderAdmin(main);
+  else if (r.name === "bots") renderBots(main);
   else if (r.name === "discover") renderDiscover(main);
   else if (r.name === "bot") renderProfile(main);
   else if (r.name === "channel" || r.name === "dm") renderChat(main);
@@ -563,43 +599,45 @@ function renderShell() {
 
 function renderChrome() {
   if (!$(".rail", app) || !S.me) return;
+  queueMicrotask(applyLayout);
   const r = S.route, sid = r.params.sid, me = uid();
-  const homeOn = ["friends", "dm", "bot", "settings", "feed", "post", "admin"].includes(r.name);
+  const homeOn = ["friends", "dm", "bot", "settings", "feed", "post", "admin", "bots"].includes(r.name);
   const dmUnread = [...S.unread].filter(c => c.startsWith("dm:")).length;
   $(".rail", app).innerHTML = h`
-    <a class="pill logo ${homeOn ? "on" : ""}" href="/friends" data-link data-tip="Início"><img src="icon.svg" width="30" alt="Cuplock">${dmUnread ? '<span class="badge"></span>' : ""}</a>
+    <a class="pill logo ${homeOn ? "on" : ""}" href="/friends" data-link data-tip="Início">${cupLogo(32)}${dmUnread ? '<span class="badge"></span>' : ""}</a>
     <div class="sep"></div>
-    ${S.servers.map(s => `<a class="pill ${sid === s.id ? "on" : ""}" href="/server/${s.id}" data-link data-tip="${esc(s.name)}" oncontextmenu="serverMenu(event,'${s.id}')" style="${sid === s.id ? `background:${esc(s.banner)}` : ""}">${esc(s.icon)}${s.channels.some(c => S.unread.has(c.id)) && sid !== s.id ? '<span class="badge" style="background:var(--accent)"></span>' : ""}</a>`)}
+    ${S.servers.map(s => `<a class="pill ${sid === s.id ? "on" : ""}" href="/server/${s.id}" data-link data-tip="${esc(s.name)}" oncontextmenu="serverMenu(event,'${s.id}')" style="${sid === s.id && !s.icon_url ? `background:${esc(s.banner)}` : ""}">${srvIcon(s)}${s.channels.some(c => S.unread.has(c.id)) && sid !== s.id ? '<span class="badge" style="background:var(--accent)"></span>' : ""}</a>`)}
     <button class="pill ghost" onclick="createServerModal()" data-tip="Criar ou entrar em servidor">${ICON.plus.replace("<svg", '<svg width="22"')}</button>
     <a class="pill ghost ${r.name === "discover" ? "on" : ""}" href="/discover" data-link data-tip="Explorar comunidades">${ICON.compass.replace("<svg", '<svg width="24"')}</a>
     <div style="flex:1"></div>
-    <a class="pill ghost" href="/settings/appearance" data-link data-tip="Personalizar">🎨</a>`;
+    <a class="pill ghost" href="/settings/appearance" data-link data-tip="Personalizar">${I("palette", 22)}</a>`;
 
   const side = $(".side", app);
   const s = S.servers.find(x => x.id === sid);
   if (s) {
     const owner = s.owner === me;
     side.innerHTML = h`
-      <div class="srv-banner" style="background:${esc(s.banner)}" onclick="serverMenu(event,'${s.id}')">
-        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.icon)} ${esc(s.name)}</span><span>${ICON.chev.replace("<svg", '<svg width="18"')}</span></div>
+      <div class="srv-banner" style="background:${srvBg(s)}" onclick="serverMenu(event,'${s.id}')">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:8px"><span class="sb-ic">${srvIcon(s)}</span>${esc(s.name)}</span><span>${ICON.chev.replace("<svg", '<svg width="18"')}</span></div>
       <div class="side-scroll">
         <div class="item" onclick="inviteModal('${s.id}')"><span class="hash" style="color:var(--accent)">${ICON.link.replace("<svg", '<svg width="16"')}</span><span class="grow" style="color:var(--accent)">Convidar pessoas</span></div>
-        <div class="side-label"><span>Canais</span>${owner ? `<button class="icon-btn" style="width:22px;height:22px" title="Criar canal" onclick="createChannelModal('${s.id}')">${ICON.plus.replace("<svg", '<svg width="14"')}</button>` : ""}</div>
-        ${s.channels.map(c => { const inc = inCallUsers(c.id); return `<a class="item ${r.params.cid === c.id ? "on" : ""} ${S.unread.has(c.id) && r.params.cid !== c.id ? "unread" : ""}" href="/server/${s.id}/channel/${c.id}" data-link onclick="closeNav()"><span class="hash">#</span><span class="grow">${esc(c.name)}</span>${inc.length ? `<span class="incall" title="${inc.length} na call">🔊${inc.length}</span>` : ""}</a>${inc.length ? `<div class="voice-users">${inc.map(id => `<span data-voice="${id}" title="${esc(dname(S.users[id]))}">${avatar(S.users[id], "", false)}</span>`).join("")}</div>` : ""}`; })}
+        
+        ${channelListHtml(s)}
       </div>${meBar()}`;
   } else {
     const unreadDms = [...S.unread].filter(c => c.startsWith("dm:")).map(c => c.slice(3).split(":").find(x => x !== me));
-    const dmList = [...new Set([...unreadDms, ...S.recentDms])].filter(id => S.users[id]);
+    const dmList = sortBff([...new Set([...unreadDms, ...S.recentDms, ...Object.keys(S.bff || {})])].filter(id => S.users[id]));
     side.innerHTML = h`
-      <div class="side-head"><button class="input" style="text-align:left;color:var(--fg3);padding:8px 12px;font-size:13.5px" onclick="quickSwitcher()">🔎 Buscar… <span style="float:right;opacity:.6">Ctrl K</span></button></div>
+      <div class="side-head"><button class="input searchbtn" onclick="quickSwitcher()">${I("search", 15)}<span class="grow">Buscar…</span><span style="opacity:.6">Ctrl K</span></button></div>
       <div class="side-scroll">
         <a class="item ${r.name === "friends" ? "on" : ""}" href="/friends" data-link onclick="closeNav()"><span class="hash">${ICON.friends.replace("<svg", '<svg width="19"')}</span><span class="grow">Amigos</span></a>
-        <a class="item ${["feed", "post"].includes(r.name) ? "on" : ""}" href="/feed" data-link onclick="closeNav()"><span class="hash" style="font-size:17px">🌊</span><span class="grow">Feed <span class="muted" style="font-weight:500">(Cupdive)</span></span>${FEED.fresh.length ? `<span class="incall" style="color:var(--accent)">${FEED.fresh.length}</span>` : ""}</a>
-        <a class="item" href="#" onclick="event.preventDefault();openAnnouncements();closeNav()"><span class="hash" style="font-size:16px">📢</span><span class="grow">Anúncios</span></a>
-        ${isStaff() ? `<a class="item ${r.name === "admin" ? "on" : ""}" href="/admin" data-link onclick="closeNav()"><span class="hash" style="font-size:16px">🛡️</span><span class="grow">Painel da ${isOwner() ? "owner" : "staff"}</span></a>` : ""}
+        <a class="item ${["feed", "post"].includes(r.name) ? "on" : ""}" href="/feed" data-link onclick="closeNav()"><span class="hash">${I("waves", 19)}</span><span class="grow">Feed <span class="muted" style="font-weight:500">(Cupdive)</span></span>${FEED.fresh.length ? `<span class="incall" style="color:var(--accent)">${FEED.fresh.length}</span>` : ""}</a>
+        <a class="item" href="#" onclick="event.preventDefault();openAnnouncements();closeNav()"><span class="hash">${I("megaphone", 18)}</span><span class="grow">Anúncios</span></a>
+        ${isStaff() ? `<a class="item ${r.name === "admin" ? "on" : ""}" href="/admin" data-link onclick="closeNav()"><span class="hash">${I("shield", 18)}</span><span class="grow">Painel da ${isOwner() ? "owner" : "staff"}</span></a>` : ""}
+        ${S.prefs.devMode ? `<a class="item ${r.name === "bots" ? "on" : ""}" href="/bots" data-link onclick="closeNav()"><span class="hash">${I("bot", 19)}</span><span class="grow">Meus bots</span></a>` : ""}
         <a class="item ${r.name === "discover" ? "on" : ""}" href="/discover" data-link onclick="closeNav()"><span class="hash">${ICON.compass.replace("<svg", '<svg width="19"')}</span><span class="grow">Explorar</span></a>
         <div class="side-label"><span>Conversas</span></div>
-        ${dmList.length ? dmList.map(id => { const u = S.users[id], c = dmId(me, id); return `<a class="item ${r.params.uid === id ? "on" : ""} ${S.unread.has(c) && r.params.uid !== id ? "unread" : ""}" href="/dm/${id}" data-link onclick="closeNav()">${avatar(u)}<span class="grow">${uname(u)}<span class="sub">${activityLine(u) || statusLabel[effStatus(u)]}</span></span></a>`; })
+        ${dmList.length ? dmList.map(id => { const u = S.users[id], c = dmId(me, id); return `<a class="item ${isBff(id) ? "bff" : ""} ${r.params.uid === id ? "on" : ""} ${S.unread.has(c) && r.params.uid !== id ? "unread" : ""}" style="${bffStyle(id)}" href="/dm/${id}" data-link onclick="closeNav()">${avatar(u)}<span class="grow">${uname(u)}<span class="sub">${activityLine(u) || statusText(u)}</span></span></a>`; })
         : `<p class="muted small" style="padding:6px 10px">Suas conversas aparecem aqui. Comece pela lista de amigos.</p>`}
       </div>${meBar()}`;
   }
@@ -646,25 +684,29 @@ async function renderChat(main) {
   main.innerHTML = h`
     <div class="top">${navBtn()}${icon}<h1>${title}</h1>${topic ? `<div class="topic">${esc(topic)}</div>` : r.name === "dm" ? `<div class="topic">${S.dmTopic || ""}</div>` : '<div class="spacer"></div>'}
       <span id="callbtns" style="display:flex;gap:4px;align-items:center">${callHeaderButtons(cid)}</span>
+      <button class="icon-btn" title="Buscar nesta conversa (Ctrl F)" onclick="openSearch()">${I("search", 18)}</button>
       ${members ? `<button class="icon-btn ${S.prefs.membersOpen ? "on" : ""}" title="Membros" onclick="setPref('membersOpen',!S.prefs.membersOpen);render()">${ICON.users}</button>` : ""}</div>
     <div class="body"><div style="flex:1;display:flex;flex-direction:column;min-width:0" id="chatcol">
       <div id="callslot"></div>
       <div class="content" id="scroller"><div class="chat" id="chat" data-cid="${esc(cid)}"><div class="empty"><div class="muted">Carregando mensagens…</div></div></div></div>
-      <div class="composer"><div id="pending" class="pending" style="display:none"></div><div class="composer-box">
-        <button class="icon-btn attach-btn" title="Enviar fotos" onclick="pickFile('image/png,image/jpeg,image/webp,image/gif',true).then(addFiles)">${ICON.plus}</button>
+      <div class="composer"><div id="replybar" class="replybar" style="display:none"></div><div id="pending" class="pending" style="display:none"></div><div class="composer-box">
+        <button class="icon-btn attach-btn" title="Anexar foto, vídeo ou áudio" onclick="pickFile(ATTACH_ACCEPT,true).then(addFiles)">${I("paperclip", 17)}</button>
         <textarea id="input" rows="1" maxlength="2000" placeholder="${esc(placeholder)}" autocomplete="off"></textarea>
-        <button class="icon-btn" title="Mensagem de voz" onclick="chatVoice()" style="font-size:18px">🎙️</button>
+        <button class="icon-btn" title="GIFs" onclick="openGifPicker(event)">${I("gif", 20)}</button>
+        <button class="icon-btn" title="Emojis" onclick="openEmojiPicker(event)">${I("smile", 19)}</button>
+        <button class="icon-btn" title="Mensagem de voz" onclick="chatVoice()">${I("mic", 19)}</button>
         <button class="send-btn" id="sendBtn" title="Enviar">${ICON.send}</button></div>
         <div class="typing" id="typing"></div></div>
     </div>${showMembers ? '<aside class="members" id="members"></aside>' : ""}</div>`;
   renderMembers();
   bindComposer(cid);
   bindDropAndPaste($("#chatcol"));
+  renderReplyBar();
   if (pendingFiles.length) renderPendingFiles();
   mountCallPanel();
   if (!S.msgs[cid]) {
     try { await loadMessages(cid); }
-    catch (e) { if ($("#chat")) $("#chat").innerHTML = `<div class="empty"><div class="e">🔒</div><div>${esc(e.message)}</div></div>`; return; }
+    catch (e) { if ($("#chat")) $("#chat").innerHTML = `<div class="empty"><div class="e">${I("lock", 48)}</div><div>${esc(e.message)}</div></div>`; return; }
   }
   if ($("#chat")?.dataset.cid !== cid) return;
   $("#chat").innerHTML = `${S.more[cid] ? `<button class="load-more" onclick="loadOlder('${esc(cid)}')">Carregar mensagens antigas</button>` : `<div class="welcome">${welcome}</div>`}<div id="list">${renderMessages(S.msgs[cid])}</div>`;
@@ -694,6 +736,42 @@ function renderMessages(list) {
   }
   return out;
 }
+// ---- responder mensagens ----
+S.replyTo = {};
+function msgById(cid, id) { return (S.msgs[cid] || []).find(m => m.id === id); }
+function snippet(m) {
+  if (!m) return "<i>mensagem antiga</i>";
+  if (m.content) return esc(m.content.replace(/\s+/g, " ").slice(0, 90));
+  const t = m.attachment?.type || "";
+  return t.startsWith("audio") ? "Áudio" : t.startsWith("video") ? "Vídeo" : "Foto";
+}
+function quoteHtml(m) {
+  if (!m.reply_to) return "";
+  const o = msgById(m.channel, m.reply_to), ou = o ? S.users[o.author] : null;
+  return `<div class="rquote" onclick="event.stopPropagation();jumpTo('${m.reply_to}')">${I("reply", 13)}${ou ? `<b style="color:${esc(ou.color)}">${esc(dname(ou))}</b>` : ""}<span>${snippet(o)}</span></div>`;
+}
+function msgActions(m) {
+  if (m.pending || m.failed) return "";
+  return `<div class="mact"><button title="Reagir" onclick="event.stopPropagation();openReactPicker(event,'${m.id}')">${I("smile", 16)}</button><button title="Responder" onclick="event.stopPropagation();startReply('${m.id}')">${I("reply", 16)}</button><button title="Mais" onclick="event.stopPropagation();msgMenu(event,'${m.id}')">${ICON.dots}</button></div>`;
+}
+function startReply(id) {
+  const cid = currentChannel(), m = msgById(cid, id); if (!m) return;
+  S.replyTo[cid] = id; renderReplyBar(); $("#input")?.focus();
+}
+function cancelReply() { delete S.replyTo[currentChannel()]; renderReplyBar(); }
+function renderReplyBar() {
+  const el = document.getElementById("replybar"); if (!el) return;
+  const cid = currentChannel(), m = msgById(cid, S.replyTo[cid]);
+  if (!m) { el.style.display = "none"; el.innerHTML = ""; return; }
+  el.style.display = "flex";
+  el.innerHTML = `${I("reply", 15)}<span class="grow">Respondendo a <b>${esc(dname(S.users[m.author]))}</b>: <span class="muted">${snippet(m)}</span></span><button class="icon-btn" style="width:26px;height:26px" title="Cancelar" onclick="cancelReply()">${I("x", 14)}</button>`;
+}
+function jumpTo(id) {
+  const el = document.querySelector(`#list [data-id="${id}"]`);
+  if (!el) return toast("Essa mensagem é mais antiga — carregue as mensagens anteriores.");
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+}
 function renderBubbles(list) {
   let out = "", i = 0;
   const me = uid();
@@ -709,7 +787,7 @@ function renderBubbles(list) {
     const u = S.users[first.author], mine = first.author === me;
     out += `<div class="bgroup ${mine ? "mine" : ""}">${mine ? "" : `<div onclick="profilePopout(event,'${first.author}')" style="cursor:pointer">${avatar(u, "", false)}</div>`}
       <div class="bcol">${mine ? "" : `<div class="bname" style="color:${esc(u?.color)}" onclick="profilePopout(event,'${first.author}')">${uname(u)}<time>${fmtTime(first.ts)}</time></div>`}
-      ${run.map(m => `<div class="bubble ${m.attachment ? "photo" : ""} ${m.attachment && !m.content ? "only" : ""} ${m.pending ? "pending" : ""} ${m.failed ? "failed msg" : ""}" data-id="${m.id}" title="${fmtDay(m.ts)} ${fmtTime(m.ts)}"${(mine || (isStaff() && !m.channel.startsWith("dm:"))) && !m.pending && !m.failed ? ` oncontextmenu="msgMenu(event,'${m.id}')"` : ""}>${m.attachment ? attachHtml(m.attachment, mine) : ""}${m.content ? `<div class="text">${md(m.content)}</div>` : ""}</div>`).join("")}
+      ${run.map(m => `<div class="brow"><div class="bubble ${m.attachment ? "photo" : ""} ${m.attachment && !m.content && !m.reply_to ? "only" : ""} ${m.pending ? "pending" : ""} ${m.failed ? "failed msg" : ""}" data-id="${m.id}" title="${fmtDay(m.ts)} ${fmtTime(m.ts)}"${!m.pending && !m.failed ? ` oncontextmenu="msgMenu(event,'${m.id}')"` : ""}>${quoteHtml(m)}${m.attachment ? attachHtml(m.attachment, mine) : ""}${m.content ? msgText(m) : ""}</div>${msgActions(m)}</div>${reactsHtml(m)}`).join("")}
       </div></div>`;
     i += run.length;
   }
@@ -718,14 +796,14 @@ function renderBubbles(list) {
 function messageHtml(m, cont) {
   const u = S.users[m.author], cls = `${m.pending ? "pending" : ""} ${m.failed ? "failed" : ""}`;
   const mine = m.author === uid() && !m.pending && !m.failed;
-  const ctx = mine || (isStaff() && !m.pending && !m.channel.startsWith("dm:")) ? ` oncontextmenu="msgMenu(event,'${m.id}')"` : "";
-  const body = `${m.attachment ? attachHtml(m.attachment) : ""}${m.content ? `<div class="text">${md(m.content)}${m.failed ? ' <small>— falhou, clique para reenviar</small>' : ""}</div>` : m.failed ? '<div class="text"><small>Foto falhou — clique para reenviar</small></div>' : ""}`;
-  if (cont) return `<div class="msg cont ${cls}" data-id="${m.id}"${ctx}><span class="hover-time">${fmtTime(m.ts)}</span><div class="msg-body">${body}</div></div>`;
+  const ctx = !m.pending && !m.failed ? ` oncontextmenu="msgMenu(event,'${m.id}')"` : "";
+  const body = `${quoteHtml(m)}${m.attachment ? attachHtml(m.attachment) : ""}${m.content ? msgText(m, m.failed ? ' <small>— falhou, clique para reenviar</small>' : "") : m.failed ? '<div class="text"><small>Foto falhou — clique para reenviar</small></div>' : ""}`;
+  if (cont) return `<div class="msg cont ${cls}" data-id="${m.id}"${ctx}><span class="hover-time">${fmtTime(m.ts)}</span><div class="msg-body">${body}${reactsHtml(m)}</div>${msgActions(m)}</div>`;
   const day = fmtDay(m.ts);
   return `<div class="group"><div class="msg ${cls}" data-id="${m.id}"${ctx}>
     <div onclick="profilePopout(event,'${m.author}')" style="cursor:pointer">${avatar(u, "lg", false)}</div>
     <div class="msg-body"><span class="name" style="color:${esc(u?.color)}" onclick="profilePopout(event,'${m.author}')">${uname(u)}</span><time>${day === "Hoje" ? "Hoje às " : day + " "}${fmtTime(m.ts)}</time>
-    ${body}</div></div></div>`;
+    ${body}${reactsHtml(m)}</div>${msgActions(m)}</div></div>`;
 }
 function appendMessage(m) {
   const list = $("#list"); if (!list) return;
@@ -745,12 +823,12 @@ async function loadOlder(cid) {
 const isNearBottom = () => { const s = $("#scroller"); return s && s.scrollHeight - s.scrollTop - s.clientHeight < 140; };
 const scrollBottom = instant => { const s = $("#scroller"); if (s) s.scrollTo({ top: s.scrollHeight, behavior: instant || S.prefs.reduceMotion ? "auto" : "smooth" }); };
 
-async function sendMessage(cid, content) {
-  const temp = { id: "tmp" + Math.random(), channel: cid, author: uid(), content, ts: Date.now(), pending: true };
+async function sendMessage(cid, content, replyTo) {
+  const temp = { id: "tmp" + Math.random(), channel: cid, author: uid(), content, reply_to: replyTo || null, ts: Date.now(), pending: true };
   (S.msgs[cid] ||= []).push(temp);
   if (currentChannel() === cid) appendMessage(temp);
   try {
-    const m = norm(await q(sb.from("messages").insert({ ...cidFilter(cid), content }).select().single()));
+    const m = norm(await q(sb.from("messages").insert({ ...cidFilter(cid), content, reply_to: replyTo || null }).select().single()));
     const l = S.msgs[cid], i = l.indexOf(temp);
     if (i >= 0) { if (l.some(x => x.id === m.id)) l.splice(i, 1); else l[i] = m; }
   } catch (e) { temp.pending = false; temp.failed = true; toast(e.message); }
@@ -769,12 +847,13 @@ function bindComposer(cid) {
     const content = ta.value.trim();
     if (!content && !pendingFiles.length) return;
     ta.value = ""; sessionStorage.removeItem(draftKey); grow();
-    if (pendingFiles.length) sendWithFiles(cid, content); else sendMessage(cid, content);
+    const rt = S.replyTo[cid] || null; delete S.replyTo[cid]; renderReplyBar();
+    if (pendingFiles.length) sendWithFiles(cid, content, rt); else sendMessage(cid, content, rt);
   };
   ta.addEventListener("keydown", e => {
     if (e.key === "Enter" && !e.shiftKey && S.prefs.enterSends && !e.isComposing) { e.preventDefault(); send(); }
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send(); }
-    if (e.key === "Escape") ta.blur();
+    if (e.key === "Escape") { if (S.replyTo[cid]) cancelReply(); else ta.blur(); }
   });
   $("#sendBtn").onclick = send;
 }
@@ -782,11 +861,16 @@ document.addEventListener("click", e => {
   const f = e.target.closest(".msg.failed"); if (!f) return;
   const cid = currentChannel(), l = S.msgs[cid], m = l?.find(x => x.id === f.dataset.id); if (!m) return;
   l.splice(l.indexOf(m), 1);
-  if (m.retry) { pendingFiles.push({ file: m.retry.file, url: URL.createObjectURL(m.retry.file) }); sendWithFiles(cid, m.retry.caption); }
-  else sendMessage(cid, m.content);
+  if (m.retry) { pendingFiles.push({ file: m.retry.file, kind: m.retry.kind || "image", url: URL.createObjectURL(m.retry.file) }); sendWithFiles(cid, m.retry.caption, m.reply_to); }
+  else sendMessage(cid, m.content, m.reply_to);
 });
 function msgMenu(e, id) {
-  showCtx(e, `<button onclick="copy(S.msgs[currentChannel()].find(m=>m.id==='${id}').content||'');closeLayer()">Copiar texto</button><button class="danger" onclick="deleteMessage('${id}')">Apagar mensagem</button>`);
+  const m = msgById(currentChannel(), id); if (!m) return;
+  const canDelete = m.author === uid() || m.realAuthor === uid() || (isStaff() && !m.channel.startsWith("dm:"));
+  showCtx(e, `<div class="ctx-quick">${QUICK_REACTS.map(x => `<button onclick="closeLayer();toggleReaction('${id}','${x}')">${x}</button>`).join("")}</div><button onclick="closeLayer();startReply('${id}')">${I("reply", 16)} Responder</button>
+    ${m.content ? `<button onclick="copy(msgById(currentChannel(),'${id}').content);closeLayer()">${I("file", 16)} Copiar texto</button>` : ""}
+    ${m.attachment?.url ? `<button onclick="window.open(msgById(currentChannel(),'${id}').attachment.url,'_blank');closeLayer()">${I("upload", 16)} Abrir arquivo</button>` : ""}
+    ${canDelete ? `<button class="danger" onclick="deleteMessage('${id}')">${I("trash", 16)} Apagar mensagem${m.author !== uid() ? " (staff)" : ""}</button>` : ""}`);
 }
 async function deleteMessage(id) {
   closeLayer();
@@ -802,7 +886,7 @@ function renderMembers() {
   const s = S.servers.find(x => x.id === S.route.params.sid); if (!s) return;
   const us = s.members.map(id => S.users[id]).filter(Boolean);
   const on = us.filter(u => effStatus(u) !== "offline").sort((a, b) => !!activityOf(b) - !!activityOf(a)), off = us.filter(u => effStatus(u) === "offline");
-  const row = u => `<div class="item" onclick="profilePopout(event,'${u.id}')" style="${effStatus(u) === "offline" ? "opacity:.45" : ""}"><span data-voice="${u.id}" class="vwrap">${avatar(u)}</span><span class="grow"><span style="color:${esc(u.color)};font-weight:700">${uname(u)}</span>${s.owner === u.id ? ' <span title="Dono do servidor">👑</span>' : ""}${(u.id === uid() ? call?.cid : S.online[u.id]?.call) ? ' <span title="Em call">🔊</span>' : ""}<span class="sub">${activityLine(u)}</span></span></div>`;
+  const row = u => `<div class="item" onclick="profilePopout(event,'${u.id}')" style="${effStatus(u) === "offline" ? "opacity:.45" : ""}"><span data-voice="${u.id}" class="vwrap">${avatar(u)}</span><span class="grow"><span style="color:${esc(u.color)};font-weight:700">${uname(u)}</span>${s.owner === u.id ? ` <span class="srv-own" title="Dono do servidor">${I("crown", 13)}</span>` : ""}${(u.id === uid() ? call?.cid : S.online[u.id]?.call) ? ' <span title="Em call">🔊</span>' : ""}${platBadge(u)}<span class="sub">${activityLine(u) || (u.id !== uid() && isOutdated(u) ? statusText(u) : "")}</span></span></div>`;
   el.innerHTML = `<div class="side-label">Online — ${on.length}</div>${on.map(row).join("")}${off.length ? `<div class="side-label">Offline — ${off.length}</div>${off.map(row).join("")}` : ""}`;
 }
 
@@ -810,7 +894,7 @@ function renderMembers() {
 let friendTab = "online";
 function renderFriends(main) {
   document.title = "Amigos — Cuplock";
-  const fr = S.friends.map(id => S.users[id]).filter(Boolean).sort((a, b) => dname(a).localeCompare(dname(b)));
+  const fr = S.friends.map(id => S.users[id]).filter(Boolean).sort((a, b) => (isBff(b.id) - isBff(a.id)) || dname(a).localeCompare(dname(b)));
   const list = friendTab === "online" ? fr.filter(u => effStatus(u) !== "offline") : fr;
   const playing = fr.filter(u => activityOf(u));
   const tabs = [["online", "Online"], ["all", "Todos"]];
@@ -821,7 +905,7 @@ function renderFriends(main) {
         <button class="tab add ${friendTab === "add" ? "on" : ""}" onclick="friendTab='add';render()">Adicionar amigo</button></div></div>
     <div class="content"><div class="page">
     ${!S.servers.length && friendTab !== "add" ? h`<div class="card" style="padding:22px;margin-bottom:20px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;background:var(--grad);color:#fff;border:0">
-      <div style="font-size:44px">👋</div><div style="flex:1;min-width:200px"><b style="font-size:18px">Bem-vindo ao Cuplock, ${esc(S.me.username)}!</b><div style="opacity:.9">Crie seu servidor, entre com um convite ou adicione seus amigos pelo nome.</div></div>
+      <div class="hero-ic">${I("hand", 40)}</div><div style="flex:1;min-width:200px"><b style="font-size:18px">Bem-vindo ao Cuplock, ${esc(S.me.username)}!</b><div style="opacity:.9">Crie seu servidor, entre com um convite ou adicione seus amigos pelo nome.</div></div>
       <button class="btn ghost" onclick="createServerModal()">Criar servidor</button><button class="btn ghost" onclick="joinByCodeModal()">Tenho um convite</button></div>` : ""}
     ${playing.length && friendTab !== "add" ? h`<div class="side-label" style="padding-left:0">Jogando agora</div><div class="now-playing">${playing.map(u => `<div class="card" style="padding:12px;cursor:pointer" data-href="/dm/${u.id}"><div style="display:flex;gap:10px;align-items:center">${avatar(u)}<b>${uname(u)}</b></div>${activityCard(u)}</div>`)}</div>` : ""}
     ${friendTab === "add" ? h`
@@ -830,11 +914,11 @@ function renderFriends(main) {
       <form id="addf" style="display:flex;gap:8px"><input class="input" name="u" placeholder="Digite um nome de usuário" autocomplete="off" autofocus><button class="btn">Adicionar</button></form>
       <div class="err" id="addErr"></div>
       <div class="card" style="margin-top:24px;padding:20px;display:flex;gap:16px;align-items:center;cursor:pointer" data-href="/discover">
-        <div style="font-size:36px">🧭</div><div style="flex:1"><b>Procurando uma comunidade?</b><div class="muted small">Veja os servidores públicos na aba Explorar.</div></div><span class="btn ghost sm">Explorar</span></div>`
+        <div class="hero-ic">${I("compass", 34)}</div><div style="flex:1"><b>Procurando uma comunidade?</b><div class="muted small">Veja os servidores públicos na aba Explorar.</div></div><span class="btn ghost sm">Explorar</span></div>`
     : list.length ? h`<div class="side-label" style="padding-left:0">${friendTab === "online" ? "Online" : "Todos os amigos"} — ${list.length}</div>
-      ${list.map(u => `<div class="friend-row" data-href="/dm/${u.id}">${avatar(u)}<div class="grow"><b>${uname(u)}</b> <span class="pronouns">@${esc(u.username)}</span><div class="muted small">${activityLine(u) || statusLabel[effStatus(u)]}</div></div>
-        <div class="acts"><a class="icon-btn" href="/dm/${u.id}" data-link title="Mensagem">${ICON.chat}</a><button class="icon-btn" title="Mais" onclick="event.stopPropagation();friendMenu(event,'${u.id}')">${ICON.dots}</button></div></div>`)}`
-    : `<div class="empty"><div class="e">🫂</div><div>${friendTab === "online" ? "Ninguém online agora." : "Nenhum amigo ainda — adicione alguém!"}</div><button class="btn sm" onclick="friendTab='add';render()">Adicionar amigo</button></div>`}
+      ${list.map(u => `<div class="friend-row ${isBff(u.id) ? "bff" : ""}" style="${bffStyle(u.id)}" data-href="/dm/${u.id}">${avatar(u)}<div class="grow"><b>${uname(u)}</b>${isBff(u.id) ? ` <span class="bff-tag">${I("star", 12)}</span>` : ""} <span class="pronouns">@${esc(u.username)}</span><div class="muted small">${activityLine(u) || statusText(u)}</div></div>
+        <div class="acts"><button class="icon-btn ${isBff(u.id) ? "on" : ""}" title="Melhor amigo" onclick="event.stopPropagation();bffMenu('${u.id}')">${I("star", 18)}</button><a class="icon-btn" href="/dm/${u.id}" data-link title="Mensagem">${ICON.chat}</a><button class="icon-btn" title="Mais" onclick="event.stopPropagation();friendMenu(event,'${u.id}')">${ICON.dots}</button></div></div>`)}`
+    : `<div class="empty"><div class="e">${I("users", 48)}</div><div>${friendTab === "online" ? "Ninguém online agora." : "Nenhum amigo ainda — adicione alguém!"}</div><button class="btn sm" onclick="friendTab='add';render()">Adicionar amigo</button></div>`}
     </div></div>`;
   $("#addf")?.addEventListener("submit", async e => {
     e.preventDefault(); const u = e.target.u.value.trim(); if (!u) return;
@@ -861,10 +945,10 @@ async function renderDiscover(main) {
     const items = (discoverCache || []).filter(s => !qq || (s.name + s.description).toLowerCase().includes(qq));
     g.innerHTML = !discoverCache ? `<div class="muted">Carregando…</div>` : items.length ? items.map(s => {
       const joined = S.servers.some(x => x.id === s.id);
-      return `<div class="card srv-card" data-href="/invite/${esc(s.invite)}"><div class="b" style="background:${esc(s.banner)}"></div><div class="i">${esc(s.icon)}</div>
+      return `<div class="card srv-card" data-href="/invite/${esc(s.invite)}"><div class="b" style="background:${srvBg(s)}"></div><div class="i">${srvIcon(s)}</div>
         <div class="c"><h3>${esc(s.name)}</h3><p>${esc(s.description || "Sem descrição.")}</p><div class="meta"><span>● ${s.members} membro${s.members == 1 ? "" : "s"}</span>
         ${joined ? `<span class="btn ghost sm">Você está aqui</span>` : `<button class="btn sm" onclick="event.stopPropagation();joinInvite('${esc(s.invite)}')">Entrar</button>`}</div></div></div>`;
-    }).join("") : `<div class="empty" style="grid-column:1/-1"><div class="e">🔍</div>${discoverQuery ? `Nada encontrado para “${esc(discoverQuery)}”.` : "Nenhuma comunidade pública ainda. Crie a primeira!"}</div>`;
+    }).join("") : `<div class="empty" style="grid-column:1/-1"><div class="e">${I("search", 48)}</div>${discoverQuery ? `Nada encontrado para “${esc(discoverQuery)}”.` : "Nenhuma comunidade pública ainda. Crie a primeira!"}</div>`;
   };
   draw();
   $("#dq").addEventListener("input", e => { discoverQuery = e.target.value; draw(); });
@@ -893,7 +977,7 @@ async function renderProfile(main) {
     const u = await fetchProfile(S.route.params.id);
     if (!u) throw new Error("Usuário não encontrado.");
     $("#prof").innerHTML = profileCard(u, true); document.title = u.username + " — Cuplock";
-  } catch (e) { $("#prof").innerHTML = `<div class="empty"><div class="e">🤖</div>${esc(e.message)}</div>`; }
+  } catch (e) { $("#prof").innerHTML = `<div class="empty"><div class="e">${I("ghost", 48)}</div>${esc(e.message)}</div>`; }
 }
 function bannerCss(u) {
   if (u.banner_url && SAFE_URL.test(u.banner_url)) return `background:url('${u.banner_url}') center/cover`;
@@ -906,21 +990,22 @@ function profileCard(u, actions) {
   return h`<div class="profile-card" style="max-width:600px"><div class="b" style="${bannerCss(u)}"></div><div class="c">
     <div style="display:flex;justify-content:space-between;align-items:flex-end">${avatar(u, "xl")}
       ${actions && !me ? `<div style="display:flex;gap:8px;padding-bottom:6px">${S.friends.includes(u.id) ? "" : `<button class="btn ghost sm" onclick="addFriend('${esc(u.username)}').then(render).catch(e=>toast(e.message))">Adicionar amigo</button>`}<a class="btn sm" href="/dm/${u.id}" data-link>Mensagem</a></div>` : ""}</div>
-    <h2 style="margin-top:8px">${uname(u)}</h2><div class="pronouns">@${esc(u.username)}${u.pronouns ? ` · ${esc(u.pronouns)}` : ""}</div>
-    <div class="muted small">${statusLabel[effStatus(u)]}</div>
-    ${u.custom_status || u.status_emoji ? `<div class="cstatus">${esc(u.status_emoji || "")} ${esc(u.custom_status || "")}</div>` : ""}
+    <h2 style="margin-top:8px">${uname(u)}${roleBadge(u)}</h2><div class="pronouns">@${esc(u.username)}${u.pronouns ? ` · ${esc(u.pronouns)}` : ""}</div>
+    <div class="muted small">${statusText(u)}${platBadge(u)}</div>
+    ${u.custom_status || u.status_emoji ? `<div class="cstatus">${esc(u.status_emoji || "")} ${emojify(esc(u.custom_status || ""))}</div>` : ""}
     ${activityCard(u)}
     ${u.bio ? `<div class="side-label" style="padding-left:0">Sobre mim</div><div class="text">${md(u.bio)}</div>` : ""}
-    ${shared.length ? `<div class="side-label" style="padding-left:0">Servidores em comum — ${shared.length}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${shared.map(s => `<a class="btn ghost sm" href="/server/${s.id}" data-link>${esc(s.icon)} ${esc(s.name)}</a>`).join("")}</div>` : ""}
+    ${shared.length ? `<div class="side-label" style="padding-left:0">Servidores em comum — ${shared.length}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${shared.map(s => `<a class="btn ghost sm" href="/server/${s.id}" data-link>${okUrl(s.icon_url) ? srvIcon(s, "tiny") : esc(s.icon)} ${esc(s.name)}</a>`).join("")}</div>` : ""}
   </div></div>`;
 }
 function profilePopout(e, id) {
   e.stopPropagation();
   const u = S.users[id]; if (!u) return;
+  if (u.isBot) return toast(`${u.username} é um bot feito por ${dname(S.users[u.botOwner]) || "alguém"}.`);
   const me = u.id === uid();
   showCtx(e, `<div style="width:300px;margin:-6px"><div class="profile-card" style="border:0"><div class="b" style="height:70px;${bannerCss(u)}"></div><div class="c" style="padding:0 14px 14px">
-    ${avatar(u, "xl")}<h3 style="margin-top:6px">${uname(u)}</h3><div class="pronouns">@${esc(u.username)}${u.pronouns ? ` · ${esc(u.pronouns)}` : ""}</div>
-    ${u.custom_status || u.status_emoji ? `<div class="cstatus small">${esc(u.status_emoji || "")} ${esc(u.custom_status || "")}</div>` : `<div class="muted small">${statusLabel[effStatus(u)]}</div>`}
+    ${avatar(u, "xl")}<h3 style="margin-top:6px">${uname(u)}${roleBadge(u)}</h3><div class="pronouns">@${esc(u.username)}${u.pronouns ? ` · ${esc(u.pronouns)}` : ""}</div>
+    ${u.custom_status || u.status_emoji ? `<div class="cstatus small">${esc(u.status_emoji || "")} ${emojify(esc(u.custom_status || ""))}</div>` : `<div class="muted small">${statusLabel[effStatus(u)]}</div>`}
     ${activityCard(u)}${u.bio ? `<p class="small text" style="margin-top:10px">${md(u.bio)}</p>` : ""}
     <div style="display:flex;gap:6px;margin-top:12px">${me ? `<a class="btn sm ghost" style="flex:1" href="/settings/profile" data-link>Editar perfil</a>` : `<a class="btn sm" style="flex:1" href="/dm/${u.id}" data-link>Mensagem</a><a class="btn sm ghost" href="/user/${u.id}" data-link>Perfil</a>`}</div>
   </div></div></div>`);
@@ -931,7 +1016,7 @@ let settingsTab = "account";
 function renderSettings() {
   if (S.route.params.tab) { settingsTab = S.route.params.tab; S.route.params.tab = null; }
   document.title = "Configurações — Cuplock";
-  const tabs = [["account", "👤 Minha conta"], ["profile", "🪪 Perfil"], ["activity", "🎮 Atividade"], ["appearance", "🎨 Aparência"], ["voice", "🎙️ Voz e vídeo"], ["chat", "💬 Chat"], ["notifications", "🔔 Notificações"], ["about", "☕ Sobre"]];
+  const tabs = [["account", "user", "Minha conta"], ["profile", "idcard", "Perfil"], ["activity", "gamepad", "Atividade"], ["appearance", "palette", "Aparência"], ["voice", "mic", "Voz e vídeo"], ["chat", "chat", "Chat"], ["notifications", "bell", "Notificações"], ["dev", "bot", "Desenvolvedor"], ["about", "coffee", "Sobre"]].map(([k, ic, n]) => [k, `${I(ic, 17)} ${n}`]);
   let el = $(".settings");
   const keepScroll = el?.querySelector("section")?.scrollTop || 0;
   if (!el) el = document.body.appendChild(Object.assign(document.createElement("div"), { className: "settings" }));
@@ -957,10 +1042,10 @@ function renderSettings() {
       <label class="f">Nome de exibição</label><input class="input" id="pf-dn" maxlength="32" placeholder="${esc(u.username)}" value="${esc(u.display_name || "")}">
       <p class="muted small" style="margin-top:6px">É o nome que aparece nas conversas. Pode ter espaço, acento e emoji. Seu @${esc(u.username)} continua o mesmo.</p>
       <label class="f">Foto de perfil</label>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${avatar(u, "lg", false)}<button class="btn sm" onclick="uploadAvatar()">📁 Escolher do PC</button>${u.avatar_url ? `<button class="btn ghost sm" onclick="saveProfile({avatar_url:null})">Remover</button>` : ""}<span class="muted small">PNG, JPG, WEBP ou GIF animado · até 4 MB</span></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${avatar(u, "lg", false)}<button class="btn sm" onclick="uploadAvatar()">${I("folder", 16)} Escolher do PC</button>${u.avatar_url ? `<button class="btn ghost sm" onclick="saveProfile({avatar_url:null})">Remover</button>` : ""}<span class="muted small">PNG, JPG, WEBP ou GIF animado · até 4 MB</span></div>
       <input type="hidden" id="pf-avatar" value="${esc(u.avatar_url || "")}">
       <label class="f">Banner</label>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn sm" onclick="uploadBanner()">🖼️ Imagem do PC</button>${u.banner_url ? `<button class="btn ghost sm" onclick="saveProfile({banner_url:null})">Remover imagem</button>` : ""}<span class="muted small">${u.banner_url ? "Usando imagem" : "ou use um degradê:"}</span></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn sm" onclick="uploadBanner()">${I("image", 16)} Imagem do PC</button>${u.banner_url ? `<button class="btn ghost sm" onclick="saveProfile({banner_url:null})">Remover imagem</button>` : ""}<span class="muted small">${u.banner_url ? "Usando imagem" : "ou use um degradê:"}</span></div>
       <label class="f">Cor do perfil</label><div class="swatches">${["#ff6b6b", "#ffa94d", "#fcc419", "#51cf66", "#20c997", "#339af0", "#845ef7", "#f06595", "#e8590c", "#868e96"].map(c => `<button class="sw ${u.color === c ? "on" : ""}" style="background:${c}" onclick="saveProfile({color:'${c}'})"></button>`)}</div>
       <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
         <input type="color" id="pf-b1" value="${banner[0]}" style="width:48px;height:36px;border:0;background:none"> → <input type="color" id="pf-b2" value="${banner[1]}" style="width:48px;height:36px;border:0;background:none">
@@ -992,23 +1077,26 @@ function renderSettings() {
       <label class="f">Cores de destaque</label>
       <div class="swatches">${[["#a78bfa", "#f472b6"], ["#60a5fa", "#a78bfa"], ["#34d399", "#22d3ee"], ["#fb923c", "#f43f5e"], ["#facc15", "#fb923c"], ["#f472b6", "#fb7185"], ["#22d3ee", "#818cf8"], ["#e2e8f0", "#94a3b8"]].map(([a, b]) => `<button class="sw ${p.accent === a && p.accent2 === b ? "on" : ""}" style="background:linear-gradient(135deg,${a},${b})" onclick="setPref('accent','${a}');setPref('accent2','${b}');renderSettings()"></button>`)}
         <span class="muted small" style="margin-left:8px">ou escolha:</span><input type="color" value="${p.accent}" oninput="setPref('accent',this.value)" style="width:40px;height:34px;border:0;background:none"><input type="color" value="${p.accent2}" oninput="setPref('accent2',this.value)" style="width:40px;height:34px;border:0;background:none"></div>
-      <label class="f">Papel de parede</label><div class="choice-grid">${Object.entries(WALLPAPERS).map(([k, w]) => `<button class="choice ${p.wallpaper === k ? "on" : ""}" onclick="setPref('wallpaper','${k}');renderSettings()"><div class="pv" style="background:${k === "imagem" && !p.wallUrl ? t.bg3 : w.css(p, t)}">${k === "imagem" && !p.wallUrl ? '<span style="position:absolute;inset:0;display:grid;place-items:center;font-size:24px">🖼️</span>' : ""}</div>${w.name}</button>`)}</div>
-      ${p.wallpaper === "imagem" ? `<div style="display:flex;gap:8px;margin-top:10px"><input class="input" id="wurl" placeholder="https://… link direto da imagem" value="${esc(p.wallUrl)}"><button class="btn sm" onclick="const v=$('#wurl').value.trim();if(v&&!/^https:\\/\\/[^\\s&quot;'()<>]+$/.test(v))return toast('Use um link https:// direto para a imagem');setPref('wallUrl',v);renderSettings()">Aplicar</button></div>` : ""}
+      <label class="f">Papel de parede</label><div class="choice-grid">${Object.entries(WALLPAPERS).map(([k, w]) => `<button class="choice ${p.wallpaper === k ? "on" : ""}" onclick="setPref('wallpaper','${k}');renderSettings()"><div class="pv" style="background:${k === "imagem" && !p.wallUrl ? t.bg3 : w.css(p, t)}">${k === "imagem" && !p.wallUrl ? `<span style="position:absolute;inset:0;display:grid;place-items:center">${I("image", 24)}</span>` : ""}</div>${w.name}</button>`)}</div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn sm" onclick="uploadWallpaper()">${I("folder", 16)} Fundo do PC</button>${p.wallpaper === "imagem" ? `<input class="input" id="wurl" style="flex:1;min-width:180px" placeholder="ou cole um link https://" value="${esc(p.wallUrl)}"><button class="btn ghost sm" onclick="const v=$('#wurl').value.trim();if(v&&!/^https:\\/\\/[^\\s&quot;'()<>]+$/.test(v))return toast('Use um link https:// direto para a imagem');setPref('wallUrl',v);renderSettings()">Aplicar link</button>` : ""}</div>
       ${slider("wallBlur", "Desfoque do fundo", 0, 30, "px")}${slider("wallDim", "Escurecer fundo", 0, 90, "%")}
       ${toggle("wallAnim", "Fundo animado", "Movimento suave nos fundos Aurora, Malha e Nebulosa")}
+      <label class="f">Janelas</label>
+      <div class="row"><div class="l"><b>Janelas arrastáveis</b><span>Mova e redimensione livremente as janelas do menu principal (puxe pela alça no topo, redimensione no canto). Fica salvo.</span></div><button class="toggle ${p.freeLayout ? "on" : ""}" onclick="setPref('freeLayout',!S.prefs.freeLayout);applyLayout();renderSettings()"></button></div>
+      ${p.freeLayout ? `<button class="btn ghost sm" onclick="resetLayout()">${I("layout", 15)} Reorganizar janelas</button>` : ""}
       <label class="f" style="margin-top:24px">Painéis</label>
       ${toggle("glass", "Efeito vidro", "Painéis translúcidos com desfoque")}${p.glass ? slider("panelOpacity", "Opacidade dos painéis", 40, 100, "%") : ""}
       ${slider("radius", "Arredondamento", 0, 32, "px")}${slider("gap", "Espaço entre painéis", 0, 24, "px")}
       <label class="f" style="margin-top:24px">Texto</label>
       <div class="seg">${Object.entries(FONTS).map(([k, f]) => `<button class="${p.font === k ? "on" : ""}" style="font-family:'${f[0]}',system-ui" onclick="setPref('font','${k}');renderSettings()">${k === "sistema" ? "Sistema" : f[0]}</button>`).join("")}</div>
       ${slider("fontSize", "Tamanho da fonte", 12, 20, "px")}
-      <label class="f" style="margin-top:24px">Mensagens</label>${seg("msgStyle", [["bubbles", "💬 Balões"], ["classic", "📜 Clássico"], ["compact", "📏 Compacto"]])}
+      <label class="f" style="margin-top:24px">Mensagens</label>${seg("msgStyle", [["bubbles", I("chat", 15) + " Balões"], ["classic", I("scroll", 15) + " Clássico"], ["compact", I("layout", 15) + " Compacto"]])}
       <label class="f">Formato dos avatares</label>${seg("avatarShape", [["squircle", "▢ Arredondado"], ["round", "◯ Círculo"]])}
       ${toggle("reduceMotion", "Reduzir animações", "Desliga animações e rolagem suave")}
       <label class="f" style="margin-top:24px">CSS personalizado <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">— para quem quer ir além</span></label>
       <textarea class="input" id="ccss" rows="5" spellcheck="false" style="font-family:ui-monospace,monospace;font-size:13px" placeholder=".bubble { border-radius: 4px; }">${esc(p.customCss)}</textarea>
       <div style="display:flex;gap:8px;margin-top:8px"><button class="btn sm" onclick="setPref('customCss',$('#ccss').value);toast('CSS aplicado')">Aplicar CSS</button>
-        <button class="btn ghost sm" style="margin-left:auto" onclick="if(confirm('Voltar toda a aparência ao padrão?')){const keep={showActivity:S.prefs.showActivity,customGames:S.prefs.customGames,manualActivity:S.prefs.manualActivity,sounds:S.prefs.sounds,enterSends:S.prefs.enterSends};S.prefs=Object.assign({},DEFAULT_PREFS,keep);setPref('theme',S.prefs.theme);renderSettings()}">Restaurar padrão</button></div>`,
+        <button class="btn ghost sm" style="margin-left:auto" onclick="uiConfirm('Voltar toda a aparência ao padrão?').then(ok=>{if(!ok)return;const keep={showActivity:S.prefs.showActivity,customGames:S.prefs.customGames,manualActivity:S.prefs.manualActivity,sounds:S.prefs.sounds,enterSends:S.prefs.enterSends};S.prefs=Object.assign({},DEFAULT_PREFS,keep);setPref('theme',S.prefs.theme);renderSettings()})">Restaurar padrão</button></div>`,
     voice: voiceSettingsHtml(),
     chat: h`<h2>Chat</h2><p>Como as conversas funcionam.</p>
       ${toggle("enterSends", "Enter envia a mensagem", "Desligado: use Ctrl + Enter para enviar")}${toggle("membersOpen", "Mostrar lista de membros", "Exibe os membros ao lado dos canais")}
@@ -1016,7 +1104,7 @@ function renderSettings() {
       <div class="row"><div class="l"><b>Limpar cache</b><span>Recarrega as mensagens do servidor</span></div><button class="btn ghost sm" onclick="S.msgs={};toast('Cache limpo')">Limpar</button></div>`,
     notifications: h`<h2>Notificações</h2><p>Sons e avisos na área de trabalho.</p>
       ${toggle("sounds", "Som de notificação", "Toca um som quando chega mensagem")}
-      <label class="f">Som</label>${seg("notifySound", [["short", "🔔 Curto"], ["long", "🎶 Longo"]])}
+      <label class="f">Som</label>${seg("notifySound", [["short", I("bell", 15) + " Curto"], ["long", I("music", 15) + " Longo"]])}
       <div style="display:flex;gap:10px;align-items:center;margin-top:10px"><button class="btn ghost sm" onclick="playNotify()">▶ Ouvir</button>
         <span class="muted small" style="flex:1">Volume <b id="v-notif">${p.notifyVolume ?? 70}%</b></span></div>
       <input type="range" min="0" max="100" value="${p.notifyVolume ?? 70}" oninput="setPref('notifyVolume',+this.value);document.getElementById('v-notif').textContent=this.value+'%'" style="margin-top:6px">
@@ -1024,6 +1112,12 @@ function renderSettings() {
         <button class="toggle ${p.desktopNotif !== false ? "on" : ""}" onclick="setPref('desktopNotif',S.prefs.desktopNotif===false);if(S.prefs.desktopNotif!==false&&'Notification' in window&&Notification.permission==='default')Notification.requestPermission();renderSettings()"></button></div>
       <div class="row"><div class="l"><b>Testar</b><span>Mostra uma notificação de exemplo agora</span></div><button class="btn ghost sm" onclick="desktopNotify('Cuplock ☕','As notificações estão funcionando!',{force:true});playNotify()">Testar notificação</button></div>
       <p class="muted small" style="margin-top:12px">Com o status <b>Não perturbe</b>, nada toca e ligações são recusadas automaticamente.</p>`,
+    dev: h`<h2>Desenvolvedor</h2>
+      ${p.devMode ? h`<div class="card" style="padding:18px;display:flex;gap:14px;align-items:center"><div class="hero-ic">${I("bot", 26)}</div><div class="grow"><b>Modo desenvolvedor ativo</b><div class="muted small">Crie bots montando blocos: gatilho (ex: <code>!dado</code>) + ações.</div></div><a class="btn" href="/bots" data-link>Meus bots</a></div>
+        <div class="row"><div class="l"><b>Modo desenvolvedor</b><span>Desligar esconde o menu de bots (seus bots continuam funcionando)</span></div><button class="toggle on" onclick="setPref('devMode',false);renderSettings();renderChrome()"></button></div>`
+      : h`<p class="muted">Recursos para quem quer criar coisas no Cuplock, como bots com blocos.</p>
+        <div class="card" style="padding:18px;margin-top:12px"><b>${I("lock", 16)} Ativar modo desenvolvedor</b><div class="muted small" style="margin:4px 0 10px">Digite a senha de desenvolvedor.</div>
+        <form style="display:flex;gap:8px" onsubmit="event.preventDefault();unlockDev(this.pw)"><input class="input" name="pw" type="password" placeholder="Senha" autocomplete="off"><button class="btn">Ativar</button></form></div>`}`,
     about: h`<h2>Sobre</h2><p>Cuplock <span id="appver">${VERSION}</span></p>
       <div class="row"><div class="l"><b>Atualizações</b><span>${window.__TAURI__ || IS_ANDROID ? "Verifica sozinho ao abrir e a cada 3 horas" : "Só nos apps de PC e Android"}</span></div><button class="btn ghost sm" onclick="checkUpdate(true)">Procurar atualização</button></div>
       <div class="row"><div class="l"><b>Instalar atualizações automaticamente</b><span>Baixa e reinicia sozinho (avisa 10 s antes; nunca durante uma call)</span></div><button class="toggle ${S.prefs.autoUpdate !== false ? "on" : ""}" onclick="setPref('autoUpdate',S.prefs.autoUpdate===false);renderSettings()"></button></div><div class="card" style="padding:20px;display:flex;gap:16px;align-items:center"><img src="icon.svg" width="56"><div><b style="font-size:18px">Cuplock</b><div class="muted small">App de mensagens feito em Rust (Tauri) + Supabase.</div></div></div>
@@ -1031,7 +1125,7 @@ function renderSettings() {
       <div class="row"><div class="l"><b>Atalhos</b><span><code>Ctrl K</code> busca rápida · <code>Esc</code> fechar · <code>Shift+Enter</code> nova linha</span></div></div>`,
   };
   el.innerHTML = h`<nav><div class="side-label">Configurações</div>${tabs.map(([k, n]) => `<button class="item ${settingsTab === k ? "on" : ""}" style="width:100%" onclick="settingsTab='${k}';history.replaceState({},'','#/settings/${k}');renderSettings();$('.settings section').scrollTop=0">${n}</button>`)}
-    <div style="height:1px;background:var(--line);margin:10px 8px"></div><button class="item" style="width:100%;color:var(--busy)" onclick="logout()">↩ Sair</button></nav>
+    <div style="height:1px;background:var(--line);margin:10px 8px"></div><button class="item" style="width:100%;color:var(--busy)" onclick="logout()">${I("logout", 17)} Sair</button></nav>
     <section><div><div class="mtabs tabs" style="flex-wrap:wrap;margin-bottom:16px;width:auto">${tabs.map(([k, n]) => `<button class="tab ${settingsTab === k ? "on" : ""}" onclick="settingsTab='${k}';renderSettings()">${n}</button>`)}</div>${sections[settingsTab] || sections.account}</div></section>
     <div class="close-x"><button class="icon-btn" onclick="closeSettings()" aria-label="Fechar" style="background:var(--bg3)">${ICON.x}</button></div>`;
   el.querySelector("section").scrollTop = keepScroll;
@@ -1169,14 +1263,14 @@ async function renderInvite() {
     const joined = S.servers.some(x => x.id === s.id);
     document.title = `Entrar em ${s.name} — Cuplock`;
     $("#inv").innerHTML = h`<p class="muted small">${s.inviter ? `<b>${esc(s.inviter)}</b> convidou você para` : "Você foi convidado para"}</p>
-      <div class="invite-srv"><div class="i" style="background:${esc(s.banner)}">${esc(s.icon)}</div><h1>${esc(s.name)}</h1>
+      <div class="invite-srv">${okUrl(s.banner_url) ? `<div class="inv-ban" style="background:${srvBg(s)}"></div>` : ""}<div class="i" style="background:${esc(s.banner)}">${srvIcon(s)}</div><h1>${esc(s.name)}</h1>
       <p class="sub">${esc(s.description)}</p><p class="small"><span style="color:var(--ok)">●</span> ${s.members} membro${s.members == 1 ? "" : "s"}</p></div>
       ${!S.session ? `<a class="btn grad" style="width:100%;padding:12px" href="/login?next=${encodeURIComponent(curPath())}" data-link>Entrar para aceitar</a>`
         : joined ? `<a class="btn ok" style="width:100%;padding:12px" href="/server/${s.id}" data-link>Você já participa — abrir servidor</a>`
         : `<button class="btn grad" style="width:100%;padding:12px" onclick="joinInvite('${esc(code)}')">Aceitar convite</button>`}
       ${S.session ? `<a class="muted small" style="display:block;margin-top:14px" href="/friends" data-link>Agora não</a>` : ""}`;
   } catch (e) {
-    $("#inv").innerHTML = `<div style="font-size:56px">🥀</div><h1>Convite inválido</h1><p class="sub">${esc(e.message)}</p><br><a class="btn" href="${S.session ? "/discover" : "/login"}" data-link>${S.session ? "Explorar comunidades" : "Entrar"}</a>`;
+    $("#inv").innerHTML = `<div class="e">${I("ticket", 56)}</div><h1>Convite inválido</h1><p class="sub">${esc(e.message)}</p><br><a class="btn" href="${S.session ? "/discover" : "/login"}" data-link>${S.session ? "Explorar comunidades" : "Entrar"}</a>`;
   }
 }
 
@@ -1326,7 +1420,10 @@ function createChannelModal(sid) {
       const name = e.target.name.value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "").slice(0, 32);
       if (!name) return ($("#ccerr").textContent = "Use letras, números, - ou _.");
       try {
-        const c = await q(sb.from("channels").insert({ server_id: sid, name, topic: e.target.topic.value.trim() }).select().single());
+        const cat = S.newChanCat || null; S.newChanCat = null;
+        const pos = Math.max(-1, ...(S.servers.find(x => x.id === sid)?.channels || []).map(x => x.position || 0)) + 1;
+        let c = await q(sb.from("channels").insert({ server_id: sid, name, topic: e.target.topic.value.trim() }).select().single());
+        if (cat || pos) { try { await q(sb.from("channels").update({ category_id: cat, position: pos }).eq("id", c.id)); c = { ...c, category_id: cat, position: pos }; } catch {} }
         const s = S.servers.find(x => x.id === sid); if (!s.channels.some(x => x.id === c.id)) s.channels.push(c);
         closeLayer(); navigate(`/server/${sid}/channel/${c.id}`);
       } catch (err) { $("#ccerr").textContent = err.message; }
@@ -1343,24 +1440,24 @@ function showCtx(e, html) {
 document.addEventListener("mousedown", e => { if (layer.querySelector(".ctx") && !e.target.closest(".ctx")) closeLayer(); });
 function serverMenu(e, sid) {
   const s = S.servers.find(x => x.id === sid), owner = s.owner === uid();
-  showCtx(e, `<button onclick="inviteModal('${sid}')">Convidar pessoas</button>${owner ? `<button onclick="createChannelModal('${sid}')">Criar canal</button>` : ""}
+  showCtx(e, `<button onclick="inviteModal('${sid}')">Convidar pessoas</button>${owner ? `<button onclick="editServerModal('${sid}')">${I("edit", 15)} Editar servidor</button><button onclick="createChannelModal('${sid}')">Criar canal</button>` : ""}
     <button onclick="copy('${esc(s.invite)}');closeLayer()">Copiar código de convite</button>
     ${owner ? `<button class="danger" onclick="deleteServer('${sid}')">Excluir servidor</button>` : `<button class="danger" onclick="leaveServer('${sid}')">Sair do servidor</button>`}`);
 }
 async function leaveServer(sid) {
   const s = S.servers.find(x => x.id === sid); closeLayer();
-  if (!confirm(`Sair de ${s.name}? Você vai precisar de um convite para voltar.`)) return;
+  if (!await uiConfirm(`Sair de ${s.name}? Você vai precisar de um convite para voltar.`)) return;
   try { await q(sb.from("members").delete().eq("server_id", sid).eq("user_id", uid())); S.servers = S.servers.filter(x => x.id !== sid); S.lastChannel._ = "/friends"; navigate("/friends"); }
   catch (e) { toast(e.message); }
 }
 async function deleteServer(sid) {
   const s = S.servers.find(x => x.id === sid); closeLayer();
-  if (prompt(`Isso apaga ${s.name} e todas as mensagens para sempre.\nDigite o nome do servidor para confirmar:`) !== s.name) return;
+  if (await uiPrompt(`Isso apaga ${s.name} e todas as mensagens para sempre.\nDigite o nome do servidor para confirmar:`, "", { title: "Excluir servidor", ok: "Excluir" }) !== s.name) return;
   try { await q(sb.from("servers").delete().eq("id", sid)); S.servers = S.servers.filter(x => x.id !== sid); S.lastChannel._ = "/friends"; toast("Servidor excluído"); navigate("/friends"); }
   catch (e) { toast(e.message); }
 }
 function friendMenu(e, id) {
-  showCtx(e, `<button onclick="navigate('/user/${id}')">Ver perfil</button><button onclick="navigate('/dm/${id}')">Mensagem</button><button class="danger" onclick="removeFriend('${id}')">Remover amigo</button>`);
+  showCtx(e, `<button onclick="navigate('/user/${id}')">Ver perfil</button><button onclick="navigate('/dm/${id}')">Mensagem</button><button onclick="bffMenu('${id}')">${I("star", 15)} ${isBff(id) ? "Melhor amigo (cor)" : "Fixar melhor amigo"}</button><button class="danger" onclick="removeFriend('${id}')">Remover amigo</button>`);
 }
 async function removeFriend(id) {
   closeLayer();
@@ -1373,11 +1470,11 @@ function quickSwitcher() {
   const items = [
     ...S.servers.flatMap(s => s.channels.map(c => ({ label: `# ${c.name}`, sub: s.name, href: `/server/${s.id}/channel/${c.id}` }))),
     ...S.friends.map(id => S.users[id]).filter(Boolean).map(u => ({ label: `@ ${dname(u)}`, sub: "@" + u.username, href: `/dm/${u.id}` })),
-    { label: "🌊 Feed (Cupdive)", sub: "Posts da galera", href: "/feed" }, { label: "🧭 Explorar", sub: "Encontrar comunidades", href: "/discover" }, { label: "⚙️ Configurações", sub: "", href: "/settings" }, { label: "🎨 Aparência", sub: "Personalizar", href: "/settings/appearance" }, ...(isStaff() ? [{ label: "🛡️ Painel da staff", sub: "Moderação e anúncios", href: "/admin" }] : []), ...(isOwner() ? [{ label: "🛠 Desenvolvedor", sub: "Só OWNER", href: "/dev" }] : []),
+    { label: "Feed (Cupdive)", ic: "waves", sub: "Posts da galera", href: "/feed" }, { label: "Explorar", ic: "compass", sub: "Encontrar comunidades", href: "/discover" }, { label: "Configurações", ic: "palette", sub: "", href: "/settings" }, { label: "Aparência", ic: "palette", sub: "Personalizar", href: "/settings/appearance" }, ...(isStaff() ? [{ label: "Painel da staff", ic: "shield", sub: "Moderação e anúncios", href: "/admin" }] : []), ...(isOwner() ? [{ label: "Desenvolvedor", ic: "wrench", sub: "Só OWNER", href: "/dev" }] : []),
   ];
   modal(`<input class="input" id="qs" placeholder="Para onde você quer ir?" style="font-size:17px;padding:14px"><div id="qsl" style="margin-top:10px;max-height:340px;overflow-y:auto"></div>`, m => {
     let sel = 0, cur = items;
-    const draw = () => { $("#qsl").innerHTML = cur.slice(0, 30).map((it, i) => `<div class="item ${i === sel ? "on" : ""}" data-href="${it.href}"><span class="grow">${esc(it.label)}</span><span class="muted small">${esc(it.sub)}</span></div>`).join("") || `<p class="muted" style="padding:10px">Nada encontrado</p>`; };
+    const draw = () => { $("#qsl").innerHTML = cur.slice(0, 30).map((it, i) => `<div class="item ${i === sel ? "on" : ""}" data-href="${it.href}">${it.ic ? `<span class="hash">${I(it.ic, 17)}</span>` : ""}<span class="grow">${esc(it.label)}</span><span class="muted small">${esc(it.sub)}</span></div>`).join("") || `<p class="muted" style="padding:10px">Nada encontrado</p>`; };
     const inp = $("#qs", m); draw();
     inp.addEventListener("input", () => { const qq = inp.value.toLowerCase().replace(/^[#@]\s*/, ""); cur = items.filter(i => (i.label + i.sub).toLowerCase().includes(qq)); sel = 0; draw(); });
     inp.addEventListener("keydown", e => {
@@ -1404,7 +1501,9 @@ document.addEventListener("click", () => document.querySelector(".tip")?.remove(
 document.addEventListener("mouseover", e => {
   const t = e.target.closest("[data-tip]"); document.querySelector(".tip")?.remove(); if (!t) return;
   const r = t.getBoundingClientRect(), tip = Object.assign(document.createElement("div"), { className: "tip", textContent: t.dataset.tip });
-  document.body.appendChild(tip); tip.style.left = r.right + 14 + "px"; tip.style.top = r.top + r.height / 2 - tip.offsetHeight / 2 + "px";
+  document.body.appendChild(tip);
+  if (document.body.classList.contains("exp") && t.closest(".rail")) { tip.style.left = Math.max(8, r.left + r.width / 2 - tip.offsetWidth / 2) + "px"; tip.style.top = r.bottom + 10 + "px"; }
+  else { tip.style.left = r.right + 14 + "px"; tip.style.top = r.top + r.height / 2 - tip.offsetHeight / 2 + "px"; }
 });
 document.addEventListener("keydown", e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k" && S.session) { e.preventDefault(); quickSwitcher(); }

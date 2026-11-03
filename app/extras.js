@@ -52,52 +52,79 @@ async function uploadBanner() {
   catch (e) { toast(e.message); }
 }
 
-// ---------------------------------------------------------------- fotos nas conversas
+// ---------------------------------------------------------------- anexos nas conversas (foto, vídeo, áudio)
 let pendingFiles = [];
 const IMG_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const VID_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+const AUD_TYPES = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/ogg", "audio/webm", "audio/mp4", "audio/x-m4a", "audio/aac", "audio/flac"];
+const EXT_TYPE = { mp3: "audio/mpeg", wav: "audio/wav", ogg: "audio/ogg", oga: "audio/ogg", m4a: "audio/mp4", aac: "audio/aac", flac: "audio/flac", opus: "audio/ogg",
+  mp4: "video/mp4", m4v: "video/mp4", webm: "video/webm", mov: "video/quicktime", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif" };
+const ATTACH_ACCEPT = [...IMG_TYPES, ...VID_TYPES, ...AUD_TYPES, ".mp3,.wav,.ogg,.m4a,.aac,.flac,.mp4,.webm,.mov"].join(",");
+function fileKind(f) {
+  let t = f.type;
+  if (!t || t === "application/octet-stream") t = EXT_TYPE[(f.name.split(".").pop() || "").toLowerCase()] || "";
+  if (t === "audio/mp3") t = "audio/mpeg";
+  if (t === "audio/x-m4a") t = "audio/mp4";
+  if (t === "audio/x-wav") t = "audio/wav";
+  return { type: t, kind: IMG_TYPES.includes(t) ? "image" : VID_TYPES.includes(t) ? "video" : AUD_TYPES.includes(t) ? "audio" : null };
+}
 function addFiles(files) {
-  for (const f of files) {
-    if (!IMG_TYPES.includes(f.type)) { toast("Só dá pra enviar imagens (PNG, JPG, WEBP, GIF)."); continue; }
-    if (f.size > 10 * 1048576) { toast(`${f.name} passa de 10 MB.`); continue; }
-    if (pendingFiles.length >= 10) { toast("Até 10 fotos por vez."); break; }
-    pendingFiles.push({ file: f, url: URL.createObjectURL(f) });
+  for (let f of files) {
+    const { type, kind } = fileKind(f);
+    if (!kind) { toast(`${f.name}: formato não suportado. Envie foto, vídeo (MP4, WEBM, MOV) ou áudio (MP3, WAV, OGG, M4A).`); continue; }
+    if (f.size > 50 * 1048576) { toast(`${f.name} passa de 50 MB.`); continue; }
+    if (pendingFiles.length >= 10) { toast("Até 10 arquivos por vez."); break; }
+    if (type !== f.type) f = new File([f], f.name, { type });
+    pendingFiles.push({ file: f, kind, url: URL.createObjectURL(f) });
   }
   renderPendingFiles();
 }
 function clearPendingFiles() { pendingFiles.forEach(p => URL.revokeObjectURL(p.url)); pendingFiles = []; renderPendingFiles(); }
 function renderPendingFiles() {
   const el = document.getElementById("pending"); if (!el) return;
-  el.innerHTML = pendingFiles.map((p, i) => `<div class="pf"><img src="${p.url}" alt=""><button onclick="URL.revokeObjectURL(pendingFiles[${i}].url);pendingFiles.splice(${i},1);renderPendingFiles()" title="Remover">✕</button><span>${fmtBytes(p.file.size)}</span></div>`).join("");
+  el.innerHTML = pendingFiles.map((p, i) => `<div class="pf ${p.kind}">${p.kind === "image" ? `<img src="${p.url}" alt="">` : p.kind === "video" ? `<video src="${p.url}" muted preload="metadata"></video><b class="pf-badge">${I("video", 14)}</b>` : `<div class="pf-audio">${I("music", 22)}<small>${esc(p.file.name)}</small></div>`}
+    <button onclick="URL.revokeObjectURL(pendingFiles[${i}].url);pendingFiles.splice(${i},1);renderPendingFiles()" title="Remover">${I("x", 12)}</button><span>${fmtBytes(p.file.size)}</span></div>`).join("");
   el.style.display = pendingFiles.length ? "flex" : "none";
 }
-async function sendWithFiles(cid, text) {
+function mediaInfo(file, kind, url) {
+  return new Promise(res => {
+    const info = {}, done = () => res(info);
+    if (kind === "image") { createImageBitmap(file).then(b => { info.w = b.width; info.h = b.height; done(); }).catch(done); return; }
+    const el = document.createElement(kind === "video" ? "video" : "audio"); el.preload = "metadata";
+    el.onloadedmetadata = () => { info.duration = Math.round((el.duration || 0) * 10) / 10; if (kind === "video") { info.w = el.videoWidth; info.h = el.videoHeight; } done(); };
+    el.onerror = done; el.src = url; setTimeout(done, 5000);
+  });
+}
+async function sendWithFiles(cid, text, replyTo) {
   const files = pendingFiles.splice(0); renderPendingFiles();
   for (let i = 0; i < files.length; i++) {
-    const { file, url } = files[i];
+    const { file, url, kind } = files[i];
     const caption = i === files.length - 1 ? text : "";
-    const temp = { id: "tmp" + Math.random(), channel: cid, author: uid(), content: caption, ts: Date.now(), pending: true, attachment: { url, local: true } };
+    const rt = i === 0 ? replyTo || null : null;
+    const temp = { id: "tmp" + Math.random(), channel: cid, author: uid(), content: caption, reply_to: rt, ts: Date.now(), pending: true, attachment: { url, type: file.type, name: file.name, local: true } };
     (S.msgs[cid] ||= []).push(temp); if (currentChannel() === cid) appendMessage(temp);
     try {
-      let w = 0, hh = 0; try { const b = await createImageBitmap(file); w = b.width; hh = b.height; } catch {}
+      const info = await mediaInfo(file, kind, url);
       const pub = await uploadTo("attachments", file);
-      const att = { url: pub, name: file.name.slice(0, 80), type: file.type, size: file.size, w, h: hh };
-      const m = norm(await q(sb.from("messages").insert({ ...cidFilter(cid), content: caption, attachment: att }).select().single()));
+      const att = { url: pub, name: file.name.slice(0, 80), type: file.type, size: file.size, ...info };
+      const m = norm(await q(sb.from("messages").insert({ ...cidFilter(cid), content: caption, attachment: att, reply_to: rt }).select().single()));
       const l = S.msgs[cid], k = l.indexOf(temp);
       if (k >= 0) { if (l.some(x => x.id === m.id)) l.splice(k, 1); else l[k] = m; }
       URL.revokeObjectURL(url);
-    } catch (e) { temp.pending = false; temp.failed = true; temp.retry = { file, caption }; toast(e.message); }
+    } catch (e) { temp.pending = false; temp.failed = true; temp.retry = { file, caption, kind }; toast(e.message); }
     if (currentChannel() === cid) appendMessage(S.msgs[cid].at(-1));
   }
 }
 function attachHtml(a, mine) {
   if (!a?.url || !(SAFE_URL.test(a.url) || a.local)) return "";
-  if (a.type?.startsWith("audio")) return voiceHtml(a.url, a.duration, mine);
   const ratio = a.w && a.h ? `aspect-ratio:${a.w}/${a.h};` : "";
+  if (a.type?.startsWith("audio")) {
+    if (a.voice || /^voz\./.test(a.name || "")) return voiceHtml(a.url, a.duration, mine);
+    return `<div class="afile" onclick="event.stopPropagation()"><div class="afile-ic">${I("music", 20)}</div><div class="afile-main"><b title="${esc(a.name || "")}">${esc(a.name || "áudio")}</b>
+      <audio src="${esc(a.url)}" controls preload="metadata"></audio></div></div>`;
+  }
+  if (a.type?.startsWith("video")) return `<div class="att vid" onclick="event.stopPropagation()"><video src="${esc(a.url)}" controls playsinline preload="metadata" style="${ratio}"></video></div>`;
   return `<div class="att" onclick="openImage('${esc(a.url)}','${esc(a.name || "imagem")}')"><img src="${esc(a.url)}" loading="lazy" alt="${esc(a.name || "")}" style="${ratio}"></div>`;
-}
-function openImage(url, name) {
-  layer.innerHTML = `<div class="lightbox" onclick="if(event.target===this)closeLayer()"><img src="${esc(url)}" alt="">
-    <div class="lb-bar"><span>${esc(name)}</span><a class="btn ghost sm" href="${esc(url)}" download="${esc(name)}">Baixar</a><button class="btn ghost sm" onclick="copy('${esc(url)}')">Copiar link</button><button class="btn sm" onclick="closeLayer()">Fechar</button></div></div>`;
 }
 function bindDropAndPaste(root) {
   root.addEventListener("dragover", e => { if ([...e.dataTransfer.types].includes("Files")) { e.preventDefault(); root.classList.add("dropping"); } });
@@ -165,7 +192,11 @@ async function joinCall(cid, { video = false, ringTo = null } = {}) {
   call.ch = sb.channel("call:" + cid, { config: { private: true, broadcast: { self: false } } })
     .on("broadcast", { event: "sig" }, ({ payload }) => onSignal(payload))
     .subscribe(st => {
-      if (st === "SUBSCRIBED") sig({ type: "join" });
+      if (st === "SUBSCRIBED") {
+        sig({ type: "join" });
+        // se o "oi" se perder no caminho, repete algumas vezes até alguém responder
+        [1500, 4000, 8000, 14000].forEach(ms => setTimeout(() => { if (call?.cid === cid && call.peers.size === 0) sig({ type: "join" }); }, ms));
+      }
       else if (st === "CHANNEL_ERROR" || st === "TIMED_OUT") { toast("Não consegui entrar na call. Rode o schema.sql novo no Supabase."); leaveCall(true); }
     });
   startLevelMeter();
@@ -184,7 +215,7 @@ async function onSignal(m) {
   if (!call || !m?.from || m.from === uid() || (m.to && m.to !== uid())) return;
   if (!callAllowedPeer(call.cid, m.from)) return;
   await ensureUsers([m.from]).catch(() => {});
-  if (m.type === "join") { ensurePeer(m.from, true); tone("join"); }
+  if (m.type === "join") { if (!call.peers.has(m.from)) { ensurePeer(m.from, true); tone("join"); } }
   else if (m.type === "sdp") await handleSdp(m).catch(e => console.warn("sdp", e));
   else if (m.type === "ice") {
     const p = call.peers.get(m.from); if (!p) return;
@@ -381,7 +412,7 @@ async function onRing(row) {
   const box = Object.assign(document.createElement("div"), { className: "incoming-bg" });
   box.id = "incoming";
   box.innerHTML = `<div class="incoming"><div class="ring-av">${avatar(u, "xl", false)}</div>
-    <small class="muted" style="letter-spacing:.08em;font-weight:800;text-transform:uppercase">${row.video ? "📹 Chamada de vídeo" : "📞 Chamada de voz"}</small>
+    <small class="muted" style="letter-spacing:.08em;font-weight:800;text-transform:uppercase">${row.video ? I("video", 13) + " Chamada de vídeo" : I("phone", 13) + " Chamada de voz"}</small>
     <b style="font-size:22px">${uname(u)}</b><span class="muted small">está te ligando…</span>
     <div style="display:flex;gap:16px;margin-top:18px"><button class="cbtn danger big" title="Recusar" onclick="declineRing()">${CI.hang}</button>
     <button class="cbtn ok big" title="Atender com voz" onclick="acceptRing(false)">${CI.phone}</button><button class="cbtn ok big" title="Atender com vídeo" onclick="acceptRing(true)">${CI.cam}</button></div></div>`;
@@ -497,7 +528,7 @@ function callHeaderButtons(cid) {
   const here = call?.cid === cid;
   const n = inCallUsers(cid).length;
   if (here) return `<span class="live-pill" onclick="document.getElementById('callpanel')?.scrollIntoView()">● AO VIVO</span>`;
-  return `${n && !cid.startsWith("dm:") ? `<button class="live-pill join" onclick="joinCall('${cid}')">🔊 ${n} na call · Entrar</button>` : ""}
+  return `${n && !cid.startsWith("dm:") ? `<button class="live-pill join" onclick="joinCall('${cid}')">${I("volume", 13)} ${n} na call · Entrar</button>` : ""}
     <button class="icon-btn" title="Chamada de voz" onclick="startCallHere('${cid}',false)">${CI.phone}</button>
     <button class="icon-btn" title="Chamada de vídeo" onclick="startCallHere('${cid}',true)">${CI.cam}</button>`;
 }
@@ -535,7 +566,7 @@ function renderCallUI() {
       t.classList.toggle("is-screen", !!st.screen);
       t.querySelector(".tile-av").innerHTML = avatar(u, "xl", false);
       const conn = me ? "" : peer.pc.connectionState;
-      t.querySelector(".tile-name").innerHTML = `${st.mic === false ? `<i class="mut">${CI.micOff}</i>` : ""}${st.deaf ? `<i class="mut">${CI.deaf}</i>` : ""}${esc(dname(u))}${me ? " (você)" : ""}${conn && conn !== "connected" ? ` <span class="muted">· ${conn === "failed" ? "falhou" : "conectando…"}</span>` : ""}${st.screen ? " · 🖥️ tela" : ""}`;
+      t.querySelector(".tile-name").innerHTML = `${st.mic === false ? `<i class="mut">${CI.micOff}</i>` : ""}${st.deaf ? `<i class="mut">${CI.deaf}</i>` : ""}${esc(dname(u))}${me ? " (você)" : ""}${conn && conn !== "connected" ? ` <span class="muted">· ${conn === "failed" ? "falhou" : "conectando…"}</span>` : ""}${st.screen ? ` · ${I("monitor", 12)} tela` : ""}`;
       if (t.parentNode !== grid) grid.appendChild(t);
     }
     for (const [id, t] of call.tiles) if (!ids.includes(id)) { t.remove(); call.tiles.delete(id); }
@@ -622,9 +653,9 @@ async function testConnection(btn) {
     await new Promise(r => { const t = setTimeout(r, 8000); pc.onicegatheringstatechange = () => { if (pc.iceGatheringState === "complete") { clearTimeout(t); r(); } }; });
     pc.close();
   } catch {}
-  const ok = (b, t) => `<div>${b ? "✅" : "❌"} ${t}</div>`;
+  const ok = (b, t) => `<div class="ckrow ${b ? "yes" : "no"}">${I(b ? "check" : "x", 15)} ${t}</div>`;
   out.innerHTML = ok(found.host, "Rede local") + ok(found.srflx, "Conexão direta pela internet (STUN)") +
-    (hasTurn() ? ok(found.relay, "Servidor TURN (para redes bloqueadas)") : `<div>⚪ Servidor TURN não configurado</div>`) +
+    (hasTurn() ? ok(found.relay, "Servidor TURN (para redes bloqueadas)") : `<div class="ckrow">${I("circle", 15)} Servidor TURN não configurado</div>`) +
     `<p class="small" style="margin-top:8px">${found.relay ? "Tudo certo: as calls devem funcionar em qualquer rede." :
       found.srflx ? (hasTurn() ? "O TURN configurado não respondeu — confira os dados no painel de desenvolvedor." : "Calls diretas devem funcionar. Se alguém não conseguir conectar, o OWNER precisa configurar um TURN.") :
       hasTurn() ? "Sua rede bloqueia conexão direta e o TURN não respondeu — confira os dados do TURN no painel de desenvolvedor (ou sua internet está fora do ar)." :
@@ -636,7 +667,7 @@ function voiceSettingsHtml() {
   const sel = (k, list, label) => `<select class="input" onchange="setPref('${k}',this.value)"><option value="">Padrão do sistema</option>${list.map(x => `<option value="${esc(x.deviceId)}" ${p[k] === x.deviceId ? "selected" : ""}>${esc(x.label || label)}</option>`).join("")}</select>`;
   const tog = (k, label, sub, def = true) => { const on = p[k] ?? def; return `<div class="row"><div class="l"><b>${label}</b><span>${sub}</span></div><button class="toggle ${on ? "on" : ""}" onclick="setPref('${k}',!(S.prefs.${k} ?? ${def}));renderSettings()"></button></div>`; };
   return `<h2>Voz e vídeo</h2><p>Microfone, fones, câmera e compartilhamento de tela.</p>
-    ${!d.mics.length ? `<div class="card" style="padding:14px;display:flex;gap:12px;align-items:center"><span style="font-size:24px">🎙️</span><span style="flex:1">Permita o acesso para escolher seus dispositivos.</span><button class="btn sm" onclick="listDevices(true)">Permitir e listar</button></div>` : ""}
+    ${!d.mics.length ? `<div class="card" style="padding:14px;display:flex;gap:12px;align-items:center">${I("mic", 22)}<span style="flex:1">Permita o acesso para escolher seus dispositivos.</span><button class="btn sm" onclick="listDevices(true)">Permitir e listar</button></div>` : ""}
     <label class="f">Microfone</label>${sel("micId", d.mics, "Microfone")}
     <div style="display:flex;gap:10px;align-items:center;margin-top:10px"><button class="btn ghost sm" onclick="testMic(this)">Testar microfone</button><div style="flex:1;height:10px;border-radius:5px;background:var(--bg3);overflow:hidden"><div id="micbar" style="height:100%;width:0;background:var(--grad);transition:width .08s"></div></div></div>
     <label class="f">Saída de áudio (fones / caixas)</label>${sel("speakerId", d.speakers, "Saída")}
@@ -691,6 +722,7 @@ async function checkUpdate(manual) {
     if (repo && /^[\w.-]+\/[\w.-]+$/.test(repo)) found.push(await latestFromGitHub(repo).catch(() => null));
     const best = found.filter(Boolean).sort((x, y) => cmpVer(y.version, x.version))[0];
     const cur = await appVersion();
+    if (best) window.LATEST_VER = best.version;
     if (best && cmpVer(best.version, cur) > 0) { updateInfo = best; showUpdateCard(); }
     else if (manual) toast(best ? `Você já está na versão mais nova (${cur}).` : `Nenhuma atualização publicada ainda (você está na ${cur}).`);
   } catch (e) { if (manual) toast("Não consegui verificar atualizações: " + e.message); }
@@ -699,7 +731,7 @@ function showUpdateCard() {
   if (!updateInfo || document.getElementById("updcard")) return;
   const auto = S.prefs.autoUpdate !== false && !call && !IS_ANDROID;
   const el = Object.assign(document.createElement("div"), { id: "updcard", className: "updcard" });
-  el.innerHTML = `<div style="font-size:26px">🚀</div><div style="flex:1;min-width:0"><b>Cuplock ${esc(updateInfo.version)} disponível</b>
+  el.innerHTML = `<div class="hero-ic">${I("rocket", 24)}</div><div style="flex:1;min-width:0"><b>Cuplock ${esc(updateInfo.version)} disponível</b>
     <small>${auto ? `Atualizando em <span id="updcount">10</span> s…` : `${fmtBytes(updateInfo.size || 0)} · leva menos de 1 minuto`}</small></div>
     <button class="btn sm" onclick="installUpdate()">${IS_ANDROID ? "Baixar" : "Atualizar agora"}</button><button class="icon-btn" title="Depois" onclick="clearInterval(window.__updc);this.parentNode.remove()">${ICON.x}</button>`;
   document.body.appendChild(el);
@@ -711,7 +743,7 @@ function showUpdateCard() {
 async function installUpdate() {
   if (!updateInfo) return;
   if (IS_ANDROID) { location.href = updateInfo.url; toast("Abrindo o download — depois toque no arquivo para instalar."); return; }
-  if (call && !confirm("Você está em uma call. Atualizar agora vai encerrar a call. Continuar?")) return;
+  if (call && !await uiConfirm("Você está em uma call. Atualizar agora vai encerrar a call. Continuar?")) return;
   clearInterval(window.__updc);
   const card = document.getElementById("updcard");
   if (card) card.innerHTML = `<div style="font-size:26px">⏳</div><div style="flex:1"><b>Baixando Cuplock ${esc(updateInfo.version)}…</b><small>O app vai fechar e abrir de novo sozinho.</small></div>`;

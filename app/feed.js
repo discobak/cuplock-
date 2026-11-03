@@ -75,7 +75,7 @@ let voiceAudio = null, voiceEl = null;
 function voiceHtml(url, dur, mine) {
   let h = 0; for (const c of url) h = (h * 31 + c.charCodeAt(0)) | 0;
   const bars = Array.from({ length: 28 }, (_, i) => { h = (h * 1103515245 + 12345) | 0; return 25 + Math.abs(h % 75); });
-  return `<div class="voice ${mine ? "mine" : ""}" data-src="${esc(url)}" data-dur="${dur || 0}"><button class="vplay" onclick="event.stopPropagation();playVoice(this.parentNode)">▶</button>
+  return `<div class="voice ${mine ? "mine" : ""}" data-src="${esc(url)}" data-dur="${dur || 0}"><button class="vplay" onclick="event.stopPropagation();playVoice(this.parentNode)">${I("play", 13)}</button>
     <div class="vwave" onclick="event.stopPropagation();seekVoice(event,this.parentNode)">${bars.map(b => `<i style="height:${b}%"></i>`).join("")}</div><span class="vtime">${fmtDur(dur)}</span></div>`;
 }
 function paintVoice(el, frac) {
@@ -85,14 +85,14 @@ function paintVoice(el, frac) {
 function playVoice(el) {
   const src = el.dataset.src;
   if (voiceEl === el && voiceAudio) { if (voiceAudio.paused) voiceAudio.play(); else voiceAudio.pause(); return; }
-  if (voiceAudio) { voiceAudio.pause(); if (voiceEl) { voiceEl.querySelector(".vplay").textContent = "▶"; paintVoice(voiceEl, 0); } }
+  if (voiceAudio) { voiceAudio.pause(); if (voiceEl) { voiceEl.querySelector(".vplay").innerHTML = I("play", 13); paintVoice(voiceEl, 0); } }
   voiceEl = el; voiceAudio = new Audio(src);
   if (S.prefs.speakerId && voiceAudio.setSinkId) voiceAudio.setSinkId(S.prefs.speakerId).catch(() => {});
   const btn = el.querySelector(".vplay"), t = el.querySelector(".vtime"), dur = +el.dataset.dur || 0;
-  voiceAudio.onplay = () => (btn.textContent = "❚❚");
-  voiceAudio.onpause = () => (btn.textContent = "▶");
+  voiceAudio.onplay = () => (btn.innerHTML = I("pause", 13));
+  voiceAudio.onpause = () => (btn.innerHTML = I("play", 13));
   voiceAudio.ontimeupdate = () => { const d = isFinite(voiceAudio.duration) ? voiceAudio.duration : dur; paintVoice(el, d ? voiceAudio.currentTime / d : 0); t.textContent = fmtDur(voiceAudio.currentTime); };
-  voiceAudio.onended = () => { btn.textContent = "▶"; paintVoice(el, 0); t.textContent = fmtDur(dur); };
+  voiceAudio.onended = () => { btn.innerHTML = I("play", 13); paintVoice(el, 0); t.textContent = fmtDur(dur); };
   voiceAudio.play().catch(() => toast("Não consegui tocar o áudio."));
 }
 function seekVoice(e, el) {
@@ -109,7 +109,7 @@ function chatVoice() {
     (S.msgs[cid] ||= []).push(temp); if (currentChannel() === cid) appendMessage(temp);
     try {
       const url = await uploadTo("attachments", file);
-      const att = { url, type: file.type, duration: Math.round(dur * 10) / 10, size: file.size, name: file.name };
+      const att = { url, type: file.type, duration: Math.round(dur * 10) / 10, size: file.size, name: file.name, voice: true };
       const m = norm(await q(sb.from("messages").insert({ ...cidFilter(cid), content: "", attachment: att }).select().single()));
       const l = S.msgs[cid], k = l.indexOf(temp); if (k >= 0) { if (l.some(x => x.id === m.id)) l.splice(k, 1); else l[k] = m; }
     } catch (e) { temp.pending = false; temp.failed = true; toast(e.message); }
@@ -124,8 +124,8 @@ function composerHtml(id, placeholder, parentId) {
     <div class="pc-main"><textarea rows="${parentId ? 1 : 2}" maxlength="2000" placeholder="${esc(placeholder)}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,320)+'px'"></textarea>
     <div class="pc-media"></div>
     <div class="pc-bar"><div class="pc-tools">
-      <button class="icon-btn" title="Foto ou vídeo" onclick="pickPostMedia('${id}')">🖼️</button>
-      <button class="icon-btn" title="Mensagem de voz" onclick="recordPostVoice('${id}')">🎙️</button>
+      <button class="icon-btn" title="Foto ou vídeo" onclick="pickPostMedia('${id}')">${I("image", 19)}</button>
+      <button class="icon-btn" title="Mensagem de voz" onclick="recordPostVoice('${id}')">${I("mic", 19)}</button>
       </div><span class="pc-count"></span><button class="btn sm" onclick="submitPost('${id}')">${parentId ? "Responder" : "Publicar"}</button></div></div></div>`;
 }
 async function pickPostMedia(id) {
@@ -145,7 +145,7 @@ function setDraftMedia(id, media) {
   const box = document.querySelector(`#pc-${id} .pc-media`); if (!box) return;
   if (!media) { box.innerHTML = ""; return; }
   box.innerHTML = `<div class="pc-prev">${media.kind === "image" ? `<img src="${media.url}">` : media.kind === "video" ? `<video src="${media.url}" controls playsinline></video>` : voiceHtml(media.url, media.duration)}
-    <button class="pc-x" title="Remover" onclick="setDraftMedia('${id}', null)">✕</button></div>`;
+    <button class="pc-x" title="Remover" onclick="setDraftMedia('${id}', null)">${I("x", 13)}</button></div>`;
 }
 async function mediaMeta(m) {
   const meta = { type: m.kind, size: m.file.size };
@@ -202,9 +202,9 @@ function postHtml(p, { detail = false, reply = false } = {}) {
       ${p.content ? `<div class="p-text text">${md(p.content)}${p.edited_at ? ' <span class="edited">(editado)</span>' : ""}</div>` : ""}
       ${mediaHtml(p.media, mine)}
       <div class="p-actions">
-        <button class="pa ${liked ? "liked" : ""}" onclick="event.stopPropagation();toggleLike('${p.id}')" title="Curtir"><span class="heart">${liked ? "♥" : "♡"}</span><span data-likes="${p.id}">${p.likes_count || ""}</span></button>
-        <button class="pa" onclick="event.stopPropagation();${reply ? `replyTo('${p.id}')` : `openPost('${p.id}',true)`}" title="Comentar">💬 <span data-replies="${p.id}">${p.replies_count || ""}</span></button>
-        <button class="pa" onclick="event.stopPropagation();sharePost('${p.id}')" title="Compartilhar">↗</button>
+        <button class="pa ${liked ? "liked" : ""}" onclick="event.stopPropagation();toggleLike('${p.id}')" title="Curtir"><span class="heart">${I(liked ? "heartFill" : "heart", 17)}</span><span data-likes="${p.id}">${p.likes_count || ""}</span></button>
+        <button class="pa" onclick="event.stopPropagation();${reply ? `replyTo('${p.id}')` : `openPost('${p.id}',true)`}" title="Comentar">${I("chat", 16)} <span data-replies="${p.id}">${p.replies_count || ""}</span></button>
+        <button class="pa" onclick="event.stopPropagation();sharePost('${p.id}')" title="Compartilhar">${I("share", 16)}</button>
       </div>
       <div class="reply-slot" id="rs-${p.id}"></div>
     </div></article>`;
@@ -258,7 +258,7 @@ function rerenderPost(p) {
 }
 async function deletePost(id) {
   closeLayer();
-  if (!confirm("Apagar este post? Os comentários também somem.")) return;
+  if (!await uiConfirm("Apagar este post? Os comentários também somem.")) return;
   try {
     await q(sb.from("posts").delete().eq("id", id));
     removePostLocal(id); toast("Post apagado");
@@ -287,7 +287,7 @@ function updateCounts(p) {
   document.querySelectorAll(`[data-likes="${p.id}"]`).forEach(el => {
     el.textContent = p.likes_count || "";
     const b = el.closest(".pa"); const on = FEED.liked.has(p.id);
-    b.classList.toggle("liked", on); b.querySelector(".heart").textContent = on ? "♥" : "♡";
+    b.classList.toggle("liked", on); b.querySelector(".heart").innerHTML = I(on ? "heartFill" : "heart", 17);
     if (on) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
   });
   document.querySelectorAll(`[data-replies="${p.id}"]`).forEach(el => (el.textContent = p.replies_count || ""));
@@ -301,7 +301,7 @@ async function loadLiked(ids) {
 // ---------------------------------------------------------------- tela do feed
 async function renderFeed(main) {
   document.title = "Cupdive — Cuplock";
-  main.innerHTML = `<div class="top">${navBtn()}<span class="hash" style="font-size:20px">🌊</span><h1>Cupdive</h1>
+  main.innerHTML = `<div class="top">${navBtn()}<span class="hash">${I("waves", 21)}</span><h1>Cupdive</h1>
       <div class="tabs" style="margin-left:10px">${[["all", "Para você"], ["friends", "Amigos"]].map(([k, n]) => `<button class="tab ${FEED.tab === k ? "on" : ""}" onclick="FEED.tab='${k}';loadFeed(true)">${n}</button>`).join("")}</div>
       <div class="spacer"></div></div>
     <div class="content" id="feedscroll"><div class="feed">
@@ -331,9 +331,9 @@ async function loadFeed(reset) {
 function drawFeedList() {
   const el = document.getElementById("feedlist"); if (!el) return;
   el.innerHTML = FEED.posts.length ? FEED.posts.map(p => postHtml(p)).join("") + (FEED.more ? `<button class="load-more" onclick="loadFeed(false)">Carregar mais</button>` : `<p class="muted small" style="text-align:center;padding:24px">Você chegou ao fim ☕</p>`)
-    : `<div class="empty"><div class="e">🌊</div><div>${FEED.tab === "friends" ? "Seus amigos ainda não postaram nada." : "Ninguém postou ainda. Seja o primeiro!"}</div></div>`;
+    : `<div class="empty"><div class="e">${I("waves", 48)}</div><div>${FEED.tab === "friends" ? "Seus amigos ainda não postaram nada." : "Ninguém postou ainda. Seja o primeiro!"}</div></div>`;
   const pill = document.getElementById("freshpill");
-  if (pill) { pill.style.display = FEED.fresh.length ? "" : "none"; pill.textContent = `↑ ${FEED.fresh.length} post${FEED.fresh.length > 1 ? "s" : ""} novo${FEED.fresh.length > 1 ? "s" : ""}`; }
+  if (pill) { pill.style.display = FEED.fresh.length ? "" : "none"; pill.innerHTML = `${I("up", 14)} ${FEED.fresh.length} post${FEED.fresh.length > 1 ? "s" : ""} novo${FEED.fresh.length > 1 ? "s" : ""}`; }
 }
 function showFresh() {
   FEED.posts = [...FEED.fresh.filter(p => !FEED.posts.some(x => x.id === p.id)), ...FEED.posts]; FEED.fresh = [];
@@ -344,7 +344,7 @@ function showFresh() {
 function openPost(id, focus) { navigate("/post/" + id); if (focus) setTimeout(() => document.querySelector("#pc-detail textarea")?.focus(), 400); }
 async function renderPostPage(main) {
   const id = S.route.params.id;
-  main.innerHTML = `<div class="top">${navBtn()}<button class="icon-btn" title="Voltar" onclick="history.length > 1 ? history.back() : navigate('/feed')">←</button><h1>Post</h1><div class="spacer"></div></div>
+  main.innerHTML = `<div class="top">${navBtn()}<button class="icon-btn" title="Voltar" onclick="history.length > 1 ? history.back() : navigate('/feed')">${I("back", 19)}</button><h1>Post</h1><div class="spacer"></div></div>
     <div class="content"><div class="feed" id="postpage"><div class="empty"><div class="muted">Carregando…</div></div></div></div>`;
   try {
     let p = FEED.cache.get(id);
@@ -355,11 +355,11 @@ async function renderPostPage(main) {
     if (S.route.name !== "post" || S.route.params.id !== id) return;
     const pg = document.getElementById("postpage");
     pg.dataset.root = p.root_id || p.id;
-    pg.innerHTML = (p.parent_id ? `<button class="load-more" onclick="navigate('/post/${p.root_id}')">↑ Ver o post original</button>` : "") + postHtml(p, { detail: true }) +
+    pg.innerHTML = (p.parent_id ? `<button class="load-more" onclick="navigate('/post/${p.root_id}')">${I("up", 14)} Ver o post original</button>` : "") + postHtml(p, { detail: true }) +
       `<div class="replies-head">Comentários</div>${composerHtml("detail", "Escreva um comentário…", p.id)}<div id="replies"></div>`;
     drawReplies(p.id, replies);
     document.title = `${dname(S.users[p.author])} no Cupdive`;
-  } catch (e) { document.getElementById("postpage").innerHTML = `<div class="empty"><div class="e">🫥</div>${esc(e.message)}</div>`; }
+  } catch (e) { document.getElementById("postpage").innerHTML = `<div class="empty"><div class="e">${I("ghost", 48)}</div>${esc(e.message)}</div>`; }
 }
 function drawReplies(postId, all) {
   const box = document.getElementById("replies"); if (!box) return;

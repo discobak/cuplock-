@@ -33,9 +33,10 @@ main{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:co
 /* logo com vapor */
 .logo-wrap{position:relative;width:168px;height:168px;margin-bottom:28px;animation:float 5s ease-in-out infinite}
 @keyframes float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
-.logo-wrap img{width:100%;height:100%;filter:drop-shadow(0 24px 50px rgba(167,139,250,.45))}
+.logo-wrap svg{width:100%;height:100%;filter:drop-shadow(0 24px 50px color-mix(in srgb,var(--a) 55%,transparent));transition:filter .8s}
+:root{transition:--a .8s}
 .steam{position:absolute;top:-34px;width:10px;height:44px;border-radius:10px;background:linear-gradient(to top,rgba(255,255,255,.35),transparent);filter:blur(4px);animation:steam 3s ease-in-out infinite;opacity:0}
-.steam:nth-child(1){left:62px}.steam:nth-child(2){left:80px;animation-delay:1s}.steam:nth-child(3){left:98px;animation-delay:2s}
+.steam:nth-child(1){left:52px}.steam:nth-child(2){left:72px;animation-delay:1s}.steam:nth-child(3){left:92px;animation-delay:2s}
 @keyframes steam{0%{transform:translateY(16px) scaleX(1);opacity:0}40%{opacity:.9}100%{transform:translateY(-26px) scaleX(1.8);opacity:0}}
 
 h1{font-size:clamp(44px,8vw,84px);font-weight:800;letter-spacing:-.04em;line-height:1}
@@ -60,13 +61,51 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
 
 .note{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:5;background:rgba(22,19,31,.92);border:1px solid rgba(255,255,255,.1);padding:14px 18px;border-radius:16px;max-width:min(460px,calc(100% - 32px));font-size:14px;color:var(--fg2);box-shadow:0 20px 50px rgba(0,0,0,.4);display:none;backdrop-filter:blur(16px)}
 .note b{color:var(--fg)}
+
+/* vitrine de temas */
+@property --a{syntax:"<color>";inherits:true;initial-value:#a78bfa}
+@property --b{syntax:"<color>";inherits:true;initial-value:#f472b6}
+:root{transition:--a .9s,--b .9s}
+.show{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;padding:30px 20px 80px;text-align:center}
+.show h2{font-size:clamp(28px,4.5vw,44px);font-weight:800;letter-spacing:-.03em}
+.show h2 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.show>p{color:var(--fg2);margin-top:10px;font-size:17px}
+.demo{position:relative;margin-top:34px;width:min(880px,100%);aspect-ratio:16/10;border-radius:22px;overflow:hidden;background:var(--d0);box-shadow:0 40px 100px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08);text-align:left;transition:background .9s;
+  --d0:#0c0a12;--d1:#16131f;--d3:#231f30;--dfg:#efeaf7;--dfg2:#b0a9c2}
+.demo *{transition:background .9s,color .9s,border-color .9s,box-shadow .9s,border-radius .9s}
+.demo .wp{position:absolute;inset:0;background:radial-gradient(50% 45% at 15% 10%,color-mix(in srgb,var(--a) 45%,transparent),transparent 70%),radial-gradient(45% 45% at 90% 90%,color-mix(in srgb,var(--b) 40%,transparent),transparent 70%)}
+.demo .tb{position:absolute;left:0;right:0;top:0;height:7%;display:flex;align-items:center;justify-content:center;gap:6px;font-size:clamp(9px,1.4vw,12px);font-weight:700;color:var(--dfg2);background:color-mix(in srgb,var(--d0) 80%,transparent)}
+.demo .tb svg{width:1.4em;height:1.4em}
+.demo .ui{position:absolute;inset:9% 1.5% 2%;display:flex;gap:1.2%}
+.demo .isle{background:color-mix(in srgb,var(--d1) 82%,transparent);border:1px solid rgba(255,255,255,.07);border-radius:var(--dr,16px);backdrop-filter:blur(10px)}
+.demo .rl{width:8%;display:flex;flex-direction:column;align-items:center;gap:6%;padding:2% 0}
+.demo .rl i{width:62%;aspect-ratio:1;border-radius:30%;background:var(--d3)}
+.demo .rl i.on{background:var(--grad)}
+.demo .rl svg{width:66%;margin-bottom:4%}
+.demo .sd{width:24%;padding:2.5%;display:flex;flex-direction:column;gap:5%}
+.demo .sd .bn{height:22%;border-radius:12px;background:var(--grad)}
+.demo .sd b{display:block;height:7%;border-radius:8px;background:var(--d3)}
+.demo .sd b.on{background:color-mix(in srgb,var(--a) 30%,var(--d3))}
+.demo .mn{flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:3% 10% 3% 3%;gap:3.5%}
+.demo .msg{max-width:60%;padding:2.2% 3%;border-radius:18px;background:var(--d3);color:var(--dfg);font-size:clamp(9px,1.5vw,14px);font-weight:600}
+.demo .msg.me{align-self:flex-end;background:var(--grad);color:#fff}
+.demo .cmp{height:11%;border-radius:14px;background:var(--d3);margin-top:2%}
+.demo .pal{position:absolute;right:3%;top:12%;display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:16px;background:rgba(10,8,16,.75);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1)}
+.demo .sw{width:clamp(22px,4vw,38px);aspect-ratio:1;border-radius:50%;border:2px solid transparent;transition:transform .2s,border-color .2s}
+.demo .sw.on{border-color:#fff;transform:scale(1.12)}
+.demo .lbl{position:absolute;left:50%;bottom:4%;transform:translateX(-50%);padding:6px 14px;border-radius:99px;background:rgba(0,0,0,.55);color:#fff;font-weight:800;font-size:clamp(11px,1.6vw,15px);backdrop-filter:blur(8px)}
+.cursor{position:absolute;left:30%;top:60%;width:clamp(18px,2.6vw,26px);z-index:5;transition:left .9s cubic-bezier(.6,0,.2,1),top .9s cubic-bezier(.6,0,.2,1);pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5))}
+.cursor.click{animation:clk .3s}
+@keyframes clk{50%{transform:scale(.8)}}
+.ripple{position:absolute;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:3px solid #fff;z-index:4;pointer-events:none;animation:rip .6s forwards}
+@keyframes rip{from{transform:scale(.2);opacity:1}to{transform:scale(1.6);opacity:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 </head>
 <body>
 <div class="bg"></div><div class="grain"></div>
 <main>
-  <div class="logo-wrap"><span class="steam"></span><span class="steam"></span><span class="steam"></span><img src="/logo.png" alt="Logo do Cuplock"></div>
+  <div class="logo-wrap"><span class="steam"></span><span class="steam"></span><span class="steam"></span><svg class="cuplogo" viewBox="0 0 128 128" aria-label="Logo do Cuplock"><defs><linearGradient id="clg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--a)"/><stop offset="1" style="stop-color:var(--b)"/></linearGradient></defs><path d="M24 40h70v34a32 32 0 0 1-32 32h-6a32 32 0 0 1-32-32z" fill="url(#clg)"/><path d="M94 48h6a14 14 0 0 1 0 28h-8" stroke="url(#clg)" stroke-width="9" fill="none" stroke-linecap="round"/><circle cx="59" cy="66" r="10" fill="var(--bg)"/><rect x="54" y="66" width="10" height="16" rx="3" fill="var(--bg)"/></svg></div>
   <h1><span>Cuplock</span></h1>
   <p class="tagline"><b>Cuplock</b> — Leve igual um copo de papel</p>
 
@@ -91,6 +130,20 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
     <span class="chip">🎮 Mostra o que você está jogando</span><span class="chip">📷 Fotos</span><span class="chip">🎨 Totalmente personalizável</span><span class="chip">🚀 Atualiza sozinho</span>
   </div>
 </main>
+<section class="show">
+  <h2>Do <span>seu jeito</span></h2>
+  <p>Temas completos, papel de parede, cores e até o layout. Troque em um clique.</p>
+  <div class="demo" id="demo">
+    <div class="wp"></div>
+    <div class="tb"><svg class="cuplogo" viewBox="0 0 128 128" aria-label="Logo do Cuplock"><defs><linearGradient id="clg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--a)"/><stop offset="1" style="stop-color:var(--b)"/></linearGradient></defs><path d="M24 40h70v34a32 32 0 0 1-32 32h-6a32 32 0 0 1-32-32z" fill="url(#clg)"/><path d="M94 48h6a14 14 0 0 1 0 28h-8" stroke="url(#clg)" stroke-width="9" fill="none" stroke-linecap="round"/><circle cx="59" cy="66" r="10" fill="var(--bg)"/><rect x="54" y="66" width="10" height="16" rx="3" fill="var(--bg)"/></svg> Cuplock</div>
+    <div class="ui"><div class="isle rl"><svg class="cuplogo" viewBox="0 0 128 128" aria-label="Logo do Cuplock"><defs><linearGradient id="clg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--a)"/><stop offset="1" style="stop-color:var(--b)"/></linearGradient></defs><path d="M24 40h70v34a32 32 0 0 1-32 32h-6a32 32 0 0 1-32-32z" fill="url(#clg)"/><path d="M94 48h6a14 14 0 0 1 0 28h-8" stroke="url(#clg)" stroke-width="9" fill="none" stroke-linecap="round"/><circle cx="59" cy="66" r="10" fill="var(--bg)"/><rect x="54" y="66" width="10" height="16" rx="3" fill="var(--bg)"/></svg><i class="on"></i><i></i><i></i></div>
+      <div class="isle sd"><div class="bn"></div><b class="on"></b><b></b><b></b><b></b></div>
+      <div class="isle mn"><div class="msg">bora jogar hoje?</div><div class="msg me">bora!! 🎮</div><div class="msg">vou trocar o tema rapidinho</div><div class="cmp"></div></div></div>
+    <div class="pal" id="pal"></div>
+    <div class="lbl" id="lbl">Meia-noite</div>
+    <svg class="cursor" id="cur" viewBox="0 0 24 24"><path d="M4 2l16 9-7 2-3 7z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>
+  </div>
+</section>
 <footer>© Cuplock</footer>
 <div class="note" id="note"></div>
 
@@ -148,6 +201,46 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
     note.innerHTML = `<b>Baixando…</b> Abra o arquivo e siga a instalação. Se o Windows mostrar “O Windows protegeu o computador”, clique em <b>Mais informações → Executar assim mesmo</b>.`;
     note.style.display = "block"; setTimeout(() => (note.style.display = "none"), 12000);
   });
+})();
+</script>
+<script>
+// vitrine: um cursor escolhe temas e tudo (inclusive a logo) muda de cor
+(() => {
+  const T = [
+    ["Meia-noite", "#a78bfa", "#f472b6", "#0c0a12", "#16131f", "#231f30", "#efeaf7", "#b0a9c2", 16],
+    ["Oceano", "#38bdf8", "#22d3ee", "#05111b", "#0b1b29", "#122737", "#e5f2fb", "#9dbbcf", 16],
+    ["Natal", "#e63946", "#2a9d8f", "#0b1a14", "#10241b", "#183526", "#f4fbf6", "#b9d8c4", 18],
+    ["Frutiger Aero", "#19b4ef", "#3fd27f", "#bfe8fb", "#f2fbff", "#e3f6ff", "#0b3550", "#2d6a8a", 22],
+    ["Halloween", "#ff7518", "#9d4edd", "#0d0812", "#170f1d", "#24172d", "#fbefe3", "#d6b79c", 14],
+    ["Sakura", "#f472b6", "#fb7185", "#f6e7ee", "#fff8fb", "#fbeaf1", "#2a1620", "#7a5566", 20],
+    ["2015 Vibez", "#7289da", "#7289da", "#1e2124", "#2e3136", "#40444b", "#ffffff", "#b9bbbe", 4],
+  ];
+  const demo = document.getElementById("demo"), pal = document.getElementById("pal"), cur = document.getElementById("cur"), lbl = document.getElementById("lbl");
+  if (!demo) return;
+  pal.innerHTML = T.map((t, i) => `<div class="sw ${i ? "" : "on"}" style="background:linear-gradient(135deg,${t[1]},${t[2]})"></div>`).join("");
+  const apply = i => {
+    const [n, a, b, d0, d1, d3, fg, fg2, r] = T[i], st = document.documentElement.style;
+    st.setProperty("--a", a); st.setProperty("--b", b);
+    Object.entries({ "--d0": d0, "--d1": d1, "--d3": d3, "--dfg": fg, "--dfg2": fg2, "--dr": r + "px" }).forEach(([k, v]) => demo.style.setProperty(k, v));
+    lbl.textContent = n; pal.querySelectorAll(".sw").forEach((s, k) => s.classList.toggle("on", k === i));
+  };
+  let i = 0, vis = true;
+  new IntersectionObserver(e => (vis = e[0].isIntersecting)).observe(demo);
+  const step = () => {
+    if (!vis || document.hidden) return setTimeout(step, 800);
+    i = (i + 1) % T.length;
+    const sw = pal.children[i], dr = demo.getBoundingClientRect(), r = sw.getBoundingClientRect();
+    const x = r.left - dr.left + r.width / 2, y = r.top - dr.top + r.height / 2;
+    cur.style.left = x + "px"; cur.style.top = y + "px";
+    setTimeout(() => {
+      cur.classList.remove("click"); void cur.offsetWidth; cur.classList.add("click");
+      const rp = Object.assign(document.createElement("div"), { className: "ripple" }); rp.style.left = x + "px"; rp.style.top = y + "px"; demo.appendChild(rp); setTimeout(() => rp.remove(), 700);
+      apply(i);
+      setTimeout(() => { cur.style.left = (25 + Math.random() * 35) + "%"; cur.style.top = (45 + Math.random() * 35) + "%"; }, 700);
+      setTimeout(step, 2600);
+    }, 950);
+  };
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) setTimeout(step, 1500);
 })();
 </script>
 </body>
