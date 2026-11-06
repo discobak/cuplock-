@@ -152,8 +152,9 @@ function browserActivity(proc, title) {
   detectActivity = async () => {
     clearTimeout(detectT);
     if (!S.prefs.showActivity) return _det();
-    let wins = [];
-    try { wins = await invoke("running_windows"); } catch {}
+    // títulos de janela a cada 45 s (o tasklist /v é pesado); no meio usa o último resultado
+    let wins = window.__wins || [];
+    if (!window.__winsAt || Date.now() - window.__winsAt > 44000) { try { wins = window.__wins = await invoke("running_windows"); window.__winsAt = Date.now(); } catch {} }
     await _det();                                  // acha o jogo/app pelo processo (lista + jogos próprios)
     clearTimeout(detectT);
     const cur = S.myActivity, manual = cur && S.prefs.manualActivity?.name === cur.name;

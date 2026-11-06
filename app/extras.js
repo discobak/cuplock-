@@ -734,7 +734,7 @@ function showUpdateCard() {
   if (!updateInfo || document.getElementById("updcard")) return;
   const auto = S.prefs.autoUpdate !== false && !call && !IS_ANDROID;
   const el = Object.assign(document.createElement("div"), { id: "updcard", className: "updcard" });
-  el.innerHTML = `<div class="hero-ic">${I("rocket", 24)}</div><div style="flex:1;min-width:0"><b>Cuplock ${esc(updateInfo.version)} disponível</b>
+  el.innerHTML = `<div class="hero-ic">${I("rocket", 24)}</div><div style="flex:1;min-width:0"><b>${esc(verLabel(updateInfo.version))} disponível</b>
     <small>${auto ? `Atualizando em <span id="updcount">10</span> s…` : `${fmtBytes(updateInfo.size || 0)} · leva menos de 1 minuto`}</small></div>
     <button class="btn sm" onclick="installUpdate()">${IS_ANDROID ? "Baixar" : "Atualizar agora"}</button><button class="icon-btn" title="Depois" onclick="clearInterval(window.__updc);this.parentNode.remove()">${ICON.x}</button>`;
   document.body.appendChild(el);
@@ -749,7 +749,7 @@ async function installUpdate() {
   if (call && !await uiConfirm("Você está em uma call. Atualizar agora vai encerrar a call. Continuar?")) return;
   clearInterval(window.__updc);
   const card = document.getElementById("updcard");
-  if (card) card.innerHTML = `<div style="font-size:26px">⏳</div><div style="flex:1"><b>Baixando Cuplock ${esc(updateInfo.version)}…</b><small>O app vai fechar e abrir de novo sozinho.</small></div>`;
+  if (card) card.innerHTML = `<div style="font-size:26px">⏳</div><div style="flex:1"><b>Baixando ${esc(verLabel(updateInfo.version))}…</b><small>O app vai fechar e abrir de novo sozinho.</small></div>`;
   try { await leaveCall(true); await window.__TAURI__.core.invoke("install_update", { url: updateInfo.url }); }
   catch (e) {
     card?.remove();

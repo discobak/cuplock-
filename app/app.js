@@ -4,7 +4,7 @@
    Supabase: contas (e-mail + senha), banco e tempo real.
    ============================================================ */
 
-const VERSION = "4.0.0";
+const VERSION = "5.0.0";
 const DEFAULT_PREFS = {
   theme: "meianoite", accent: "#a78bfa", accent2: "#f472b6", wallpaper: "aurora", wallUrl: "", freeLayout: false, layout: {}, wallBlur: 0, wallDim: 30, wallAnim: true,
   panelOpacity: 78, glass: true, radius: 20, gap: 10, font: "jakarta", fontSize: 15, msgStyle: "bubbles", avatarShape: "squircle",
@@ -1082,8 +1082,7 @@ function renderSettings() {
       ${slider("wallBlur", "Desfoque do fundo", 0, 30, "px")}${slider("wallDim", "Escurecer fundo", 0, 90, "%")}
       ${toggle("wallAnim", "Fundo animado", "Movimento suave nos fundos Aurora, Malha e Nebulosa")}
       <label class="f">Janelas</label>
-      <div class="row"><div class="l"><b>Janelas arrastáveis</b><span>Mova e redimensione livremente as janelas do menu principal (puxe pela alça no topo, redimensione no canto). Fica salvo.</span></div><button class="toggle ${p.freeLayout ? "on" : ""}" onclick="setPref('freeLayout',!S.prefs.freeLayout);applyLayout();renderSettings()"></button></div>
-      ${p.freeLayout ? `<button class="btn ghost sm" onclick="resetLayout()">${I("layout", 15)} Reorganizar janelas</button>` : ""}
+      ${themeEditorRowHtml()}
       <label class="f" style="margin-top:24px">Painéis</label>
       ${toggle("glass", "Efeito vidro", "Painéis translúcidos com desfoque")}${p.glass ? slider("panelOpacity", "Opacidade dos painéis", 40, 100, "%") : ""}
       ${slider("radius", "Arredondamento", 0, 32, "px")}${slider("gap", "Espaço entre painéis", 0, 24, "px")}
@@ -1118,7 +1117,7 @@ function renderSettings() {
       : h`<p class="muted">Recursos para quem quer criar coisas no Cuplock, como bots com blocos.</p>
         <div class="card" style="padding:18px;margin-top:12px"><b>${I("lock", 16)} Ativar modo desenvolvedor</b><div class="muted small" style="margin:4px 0 10px">Digite a senha de desenvolvedor.</div>
         <form style="display:flex;gap:8px" onsubmit="event.preventDefault();unlockDev(this.pw)"><input class="input" name="pw" type="password" placeholder="Senha" autocomplete="off"><button class="btn">Ativar</button></form></div>`}`,
-    about: h`<h2>Sobre</h2><p>Cuplock <span id="appver">${VERSION}</span></p>
+    about: h`<h2>Sobre</h2><p><b>${verLabel(VERSION)}</b> <span class="muted small" id="appver">(${VERSION})</span></p>
       <div class="row"><div class="l"><b>Atualizações</b><span>${window.__TAURI__ || IS_ANDROID ? "Verifica sozinho ao abrir e a cada 3 horas" : "Só nos apps de PC e Android"}</span></div><button class="btn ghost sm" onclick="checkUpdate(true)">Procurar atualização</button></div>
       <div class="row"><div class="l"><b>Instalar atualizações automaticamente</b><span>Baixa e reinicia sozinho (avisa 10 s antes; nunca durante uma call)</span></div><button class="toggle ${S.prefs.autoUpdate !== false ? "on" : ""}" onclick="setPref('autoUpdate',S.prefs.autoUpdate===false);renderSettings()"></button></div><div class="card" style="padding:20px;display:flex;gap:16px;align-items:center"><img src="icon.svg" width="56"><div><b style="font-size:18px">Cuplock</b><div class="muted small">App de mensagens feito em Rust (Tauri) + Supabase.</div></div></div>
       ${isOwner() ? `<div class="row"><div class="l"><b>Ferramentas de desenvolvedor</b><span>Só para o OWNER · conexão, rotas e eventos ao vivo</span></div><a class="btn ghost sm" href="/dev" data-link>Abrir</a></div>` : ""}
@@ -1296,7 +1295,7 @@ async function renderDev() {
     <div class="card" style="padding:14px 16px;line-height:1.8">
       Servidor: <code>${esc(c.SUPABASE_URL || "não configurado")}</code><br>
       Chave: <code>${esc((c.SUPABASE_ANON_KEY || "").slice(0, 12))}…</code><br>
-      Modo: <b>${IS_DESKTOP ? "App de PC (Tauri)" : "Navegador"}</b> · Versão ${VERSION}<br>
+      Modo: <b>${IS_DESKTOP ? "App de PC (Tauri)" : "Navegador"}</b> · ${verLabel(VERSION)} (${VERSION})<br>
       Sessão: ${S.session ? `<b>${esc(S.me?.username || S.session.user.email)}</b> · <button class="btn ghost sm" onclick="logout()">Sair</button>` : `não logado · <a href="/login?next=/dev" data-link>Entrar</a>`}<br>
       Tempo real: <b id="rts">${esc(S.rtStatus)}</b></div>
     <div class="side-label" style="padding-left:0">Servidor TURN das calls (vale para todo mundo)</div>

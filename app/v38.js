@@ -44,9 +44,9 @@ S.ghosts = {};
 const isGhost = u => isOwner() && u && u.id !== uid() && effStatus(u) === "offline" && S.ghosts[u.id] && Date.now() - S.ghosts[u.id].t < 150000;
 function statusText(u) {
   if (u?.isBot) return "Bot";
-  if (isGhost(u)) return `Invisível — online agora${S.ghosts[u.id].version ? " · v" + esc(S.ghosts[u.id].version) : ""}`;
+  if (isGhost(u)) return `Invisível — online agora${S.ghosts[u.id].version ? " · " + esc(verLabel(S.ghosts[u.id].version)) : ""}`;
   const base = statusLabel[effStatus(u)];
-  if (isOutdated(u)) { const v = userVer(u); return `Desatualizado · ${v ? "v" + esc(v) : "versão antiga"}`; }
+  if (isOutdated(u)) { const v = userVer(u); return `Desatualizado · ${v ? esc(verLabel(v)) : "versão antiga"}`; }
   return base;
 }
 function dotExtra(u) { return isGhost(u) ? " ghost" : isOutdated(u) ? " old" : ""; }

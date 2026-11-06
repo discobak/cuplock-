@@ -82,12 +82,12 @@ addEventListener("mousedown", hideTip, true); addEventListener("scroll", hideTip
 showUpdateCard = function () {
   if (!updateInfo || document.getElementById("updcard")) return;
   const v = updateInfo.version, auto = S.prefs.autoUpdate !== false && !call && !IS_ANDROID;
-  if (window.__clautNotified !== v) { window.__clautNotified = v; desktopNotify("CLAUT — atualização do Cuplock", `A versão ${v} está disponível.`, { force: true }); playNotify?.(); }
+  if (window.__clautNotified !== v) { window.__clautNotified = v; desktopNotify("CLAUT — atualização do Cuplock", `${verLabel(v)} está disponível.`, { force: true }); playNotify?.(); }
   const el = Object.assign(document.createElement("div"), { id: "updcard", className: "claut" });
   el.innerHTML = `<div class="claut-card">
     <div class="claut-top"><span class="claut-badge">CLAUT</span><small>Cuplock Auto Updating Tool</small><span class="grow"></span><button class="icon-btn" title="Agora não" onclick="clautLater()">${I("x", 16)}</button></div>
     <div class="claut-body"><div class="claut-logo">${cupLogo(64)}<i></i></div>
-      <div><h2>Cuplock ${esc(v)} chegou!</h2><p class="muted">Você está na ${esc(VERSION)}. ${updateInfo.size ? fmtBytes(updateInfo.size) + " · " : ""}leva menos de 1 minuto${IS_ANDROID ? "" : " e o app abre de novo sozinho"}.</p></div></div>
+      <div><h2>${esc(verLabel(v))} chegou!</h2><p class="muted">Você está no ${esc(verLabel(VERSION))}. ${updateInfo.size ? fmtBytes(updateInfo.size) + " · " : ""}leva menos de 1 minuto${IS_ANDROID ? "" : " e o app abre de novo sozinho"}.</p></div></div>
     ${auto ? `<div class="claut-bar"><i id="clautbar"></i></div><p class="small muted" style="margin:6px 0 0">Atualizando em <b id="updcount">15</b> s…</p>` : ""}
     <div class="acts"><button class="btn ghost" onclick="clautLater()">Depois</button><button class="btn" onclick="installUpdate()">${I("download", 16)} ${IS_ANDROID ? "Baixar" : "Atualizar agora"}</button></div></div>`;
   document.body.appendChild(el);
