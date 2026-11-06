@@ -67,43 +67,53 @@ function applyLayout() {
     const el = $("." + k, a); if (!el) continue;
     if (!on) { el.style.left = el.style.top = el.style.width = el.style.height = el.style.zIndex = ""; el.querySelectorAll(":scope > .grip").forEach(g => g.remove()); continue; }
     const r = (S.prefs.layout || {})[k] || defaultBox(k);
-    const W = innerWidth, H = innerHeight;
+    const W = a.clientWidth || innerWidth, H = a.clientHeight || innerHeight;
     const w = Math.min(Math.max(r.w, k === "rail" ? 60 : 200), W), hh = Math.min(Math.max(r.h, 200), H);
     Object.assign(el.style, { left: Math.min(Math.max(r.x, 0), W - 60) + "px", top: Math.min(Math.max(r.y, 0), H - 40) + "px", width: w + "px", height: hh + "px" });
     if (!el.querySelector(":scope > .grip.move")) {
-      el.insertAdjacentHTML("beforeend", `<div class="grip move" title="Arrastar janela">${I("move", 13)}</div><div class="grip size" title="Redimensionar"></div>`);
+      el.insertAdjacentHTML("beforeend", `<div class="grip move" title="Arrastar janela">${I("move", 13)}</div>` + ["n", "s", "e", "w", "ne", "nw", "se", "sw"].map(d => `<div class="grip edge e-${d}" data-d="${d}"></div>`).join(""));
       bindGrip(el, k);
     }
   }
 }
 function defaultBox(k) {
-  const g = 10, H = innerHeight - 2 * g;
+  const g = 10, H = (document.getElementById("app")?.clientHeight || innerHeight) - 2 * g;
   if (k === "rail") return { x: g, y: g, w: 74, h: H };
   if (k === "side") return { x: 94, y: g, w: 256, h: H };
   return { x: 360, y: g, w: Math.max(400, innerWidth - 370), h: H };
 }
 let topZ = 2;
+// move pela alça e redimensiona por qualquer lado ou canto
 function bindGrip(el, k) {
   el.addEventListener("pointerdown", () => { if (document.getElementById("app")?.classList.contains("free")) el.style.zIndex = ++topZ; }, true);
+  const minW = k === "rail" ? 60 : 200, minH = 160;
   const start = (e, mode) => {
     e.preventDefault(); e.stopPropagation();
-    const r0 = el.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY;
+    const base = document.getElementById("app").getBoundingClientRect();
+    const r0 = el.getBoundingClientRect(), L = r0.left - base.left, T = r0.top - base.top, x0 = e.clientX, y0 = e.clientY;
     el.classList.add("dragging"); document.body.classList.add("nosel");
     const mv = ev => {
       const dx = ev.clientX - x0, dy = ev.clientY - y0;
-      if (mode === "move") { el.style.left = Math.max(0, Math.min(innerWidth - 60, r0.left + dx)) + "px"; el.style.top = Math.max(0, Math.min(innerHeight - 40, r0.top + dy)) + "px"; }
-      else { el.style.width = Math.max(k === "rail" ? 60 : 200, r0.width + dx) + "px"; el.style.height = Math.max(200, r0.height + dy) + "px"; }
+      let l = L, t = T, w = r0.width, h = r0.height;
+      if (mode === "move") { l = L + dx; t = T + dy; }
+      else {
+        if (mode.includes("e")) w = Math.max(minW, r0.width + dx);
+        if (mode.includes("s")) h = Math.max(minH, r0.height + dy);
+        if (mode.includes("w")) { w = Math.max(minW, r0.width - dx); l = L + r0.width - w; }
+        if (mode.includes("n")) { h = Math.max(minH, r0.height - dy); t = T + r0.height - h; }
+      }
+      l = Math.max(0, Math.min(base.width - 60, l)); t = Math.max(0, Math.min(base.height - 40, t));
+      Object.assign(el.style, { left: l + "px", top: t + "px", width: w + "px", height: h + "px" });
     };
     const end = () => {
       removeEventListener("pointermove", mv); removeEventListener("pointerup", end);
       el.classList.remove("dragging"); document.body.classList.remove("nosel");
-      const r = el.getBoundingClientRect();
-      setPref("layout", { ...(S.prefs.layout || {}), [k]: { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) } });
+      setPref("layout", { ...(S.prefs.layout || {}), [k]: { x: parseInt(el.style.left), y: parseInt(el.style.top), w: parseInt(el.style.width), h: parseInt(el.style.height) } });
     };
     addEventListener("pointermove", mv); addEventListener("pointerup", end);
   };
   el.querySelector(":scope > .grip.move").onpointerdown = e => start(e, "move");
-  el.querySelector(":scope > .grip.size").onpointerdown = e => start(e, "size");
+  el.querySelectorAll(":scope > .grip.edge").forEach(g => (g.onpointerdown = e => start(e, g.dataset.d)));
 }
 function resetLayout() { setPref("layout", {}); applyLayout(); toast("Janelas voltaram ao lugar"); }
 addEventListener("resize", () => { if (S.prefs.freeLayout) applyLayout(); });

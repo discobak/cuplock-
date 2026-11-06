@@ -102,18 +102,54 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
 @keyframes clk{50%{transform:scale(.8)}}
 .ripple{position:absolute;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:3px solid #fff;z-index:4;pointer-events:none;animation:rip .6s forwards}
 @keyframes rip{from{transform:scale(.2);opacity:1}to{transform:scale(1.6);opacity:0}}
+
+/* ===== home nova (5.5) ===== */
+.topnav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;padding:14px max(20px,calc(50% - 560px));background:color-mix(in srgb,var(--bgc) 70%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.06)}
+.topnav .brand{display:flex;align-items:center;gap:8px;color:#fff;text-decoration:none;font-size:18px}.topnav .brand svg{width:30px;height:30px}
+.topnav a{color:#cfc8e6;text-decoration:none;font-weight:700;font-size:14.5px}.topnav a:hover{color:#fff}
+.topnav .grow{flex:1}.vtag{font-size:12px;font-weight:800;padding:4px 10px;border-radius:99px;background:color-mix(in srgb,var(--a) 22%,transparent);color:#fff}
+.navcta{padding:8px 14px;border-radius:12px;background:var(--grad)!important;color:#fff!important}
+.hero2{position:relative;z-index:1;display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;max-width:1120px;margin:0 auto;padding:70px 24px 40px;min-height:auto;text-align:left}
+.hero2 h1{font-size:clamp(38px,6vw,68px);line-height:1.02;letter-spacing:-.04em;margin:14px 0}
+.hero2 h1 span,.feats h2 span,.dl h2 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero2 .tagline{font-size:18px;max-width:520px}.hero2 .ctas{justify-content:flex-start}.hero2 .meta{text-align:left}
+.pill-new{display:inline-block;padding:6px 12px;border-radius:99px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);font-size:13px;font-weight:700;color:#e5dcff}
+.h-right{position:relative;display:grid;place-items:center;min-height:360px}
+.h-right .logo-wrap{width:240px;height:240px;overflow:visible;margin:0}.h-right .logo-wrap svg{width:240px!important;height:240px!important;position:relative}
+.float-card{position:absolute;padding:10px 14px;border-radius:16px;background:rgba(22,19,31,.75);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(10px);box-shadow:0 20px 40px rgba(0,0,0,.4);animation:fl 6s ease-in-out infinite}
+.float-card b{display:block;font-size:14px}.float-card small{color:#b0a9c2}
+.fc1{left:-10px;top:10px}.fc2{right:-20px;top:260px;animation-delay:-2s}.fc3{left:0;bottom:-10px;animation-delay:-4s}
+@keyframes fl{50%{transform:translateY(-10px)}}
+.feats,.dl,.faq{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:50px 24px;text-align:center}
+.feats h2,.dl h2,.faq h2{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.03em}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:30px;text-align:left}
+.fcard{padding:20px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);transition:transform .2s,border-color .2s}
+.fcard:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--a) 60%,transparent)}
+.fcard b{display:block;font-size:17px;margin:12px 0 6px}.fcard p{color:#b0a9c2;font-size:14.5px;line-height:1.5;margin:0}
+.fic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--grad);color:#fff}.fic svg{width:22px;height:22px}
+.sub2{color:#b0a9c2;margin-top:8px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:26px}
+.dcard{padding:22px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff;text-decoration:none;text-align:left}
+.dcard:hover{border-color:var(--a);background:color-mix(in srgb,var(--a) 12%,transparent)}
+.dcard b{display:block;font-size:18px}.dcard small{color:#b0a9c2}.dcard.off{opacity:.45;pointer-events:none}
+.faq{max-width:760px;text-align:left}.faq h2{text-align:center;margin-bottom:20px}
+.faq details{padding:14px 18px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-bottom:10px}
+.faq summary{cursor:pointer;font-weight:800}.faq p{color:#b0a9c2;margin:10px 0 0}
+@media (max-width:860px){.hero2{grid-template-columns:1fr;text-align:center;padding-top:40px}.hero2 .ctas{justify-content:center}.hero2 .meta{text-align:center}.hero2 .tagline{margin:0 auto}.h-right{min-height:300px}.topnav a:not(.navcta):not(.brand){display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 </head>
 <body>
 <div class="bg"></div><div class="grain"></div>
-<main>
-  <div class="logo-wrap"><span class="steam"></span><span class="steam"></span><span class="steam"></span><svg class="cuplogo" viewBox="0 0 128 128" aria-label="Logo do Cuplock"><defs><linearGradient id="clg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--a)"/><stop offset="1" style="stop-color:var(--b)"/></linearGradient></defs><path d="M24 40h70v34a32 32 0 0 1-32 32h-6a32 32 0 0 1-32-32z" fill="url(#clg)"/><path d="M94 48h6a14 14 0 0 1 0 28h-8" stroke="url(#clg)" stroke-width="9" fill="none" stroke-linecap="round"/><circle cx="59" cy="66" r="10" fill="var(--bg)"/><rect x="54" y="66" width="10" height="16" rx="3" fill="var(--bg)"/></svg></div>
-  <h1><span>Cuplock</span></h1>
-  <p class="tagline"><b>Cuplock</b> — Leve igual um copo de papel</p>
-
-  <div class="ctas">
-    <a class="btn primary" id="download" href="/download/Cuplock_3.0.0_x64-setup.exe" download>
+<nav class="topnav"><a class="brand" href="#"><svg class="cuplogo" viewBox="0 0 128 128" aria-label="Logo do Cuplock"><defs><linearGradient id="clg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--a)"/><stop offset="1" style="stop-color:var(--b)"/></linearGradient></defs><path d="M24 40h70v34a32 32 0 0 1-32 32h-6a32 32 0 0 1-32-32z" fill="url(#clg)"/><path d="M94 48h6a14 14 0 0 1 0 28h-8" stroke="url(#clg)" stroke-width="9" fill="none" stroke-linecap="round"/><circle cx="59" cy="66" r="10" fill="var(--bg)"/><rect x="54" y="66" width="10" height="16" rx="3" fill="var(--bg)"/></svg><b>Cuplock</b></a><span class="vtag" id="vtag">Cuplock 5.5 (Energy Bar)</span><span class="grow"></span>
+  <a href="#recursos">Recursos</a><a href="#temas">Temas</a><a href="#baixar">Baixar</a><a class="navcta" href="/app/">Abrir no navegador</a></nav>
+<main class="hero2">
+  <div class="h-left">
+    <span class="pill-new">Novo · Cupgine, enquetes, Theme Editor</span>
+    <h1>Converse, jogue e <span>crie</span> com seus amigos.</h1>
+    <p class="tagline"><b>Cuplock</b> — leve igual um copo de papel. Servidores, calls, mini-games e um visual que você monta do seu jeito.</p>
+    <div class="ctas">
+      <a class="btn primary" id="download" href="/download/Cuplock_3.0.0_x64-setup.exe" download>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
       Baixar app
     </a>
@@ -125,15 +161,17 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
       Navegador
     </a>
+    </div>
+    <p class="meta" id="meta">Windows 10 e 11 · grátis</p>
   </div>
-  <p class="meta" id="meta">Windows 10 e 11 · grátis</p>
-
-  <div class="features">
-    <span class="chip">💬 Servidores e DMs</span><span class="chip">📞 Calls de voz e vídeo</span><span class="chip">🖥️ Compartilhar tela</span>
-    <span class="chip">🎮 Mostra o que você está jogando</span><span class="chip">📷 Fotos</span><span class="chip">🎨 Totalmente personalizável</span><span class="chip">🚀 Atualiza sozinho</span>
-  </div>
+  <div class="h-right"><div class="logo-wrap"><span class="steam"></span><span class="steam"></span><span class="steam"></span><svg class="cuplogo" viewBox="0 0 128 128" aria-label="Logo do Cuplock"><defs><linearGradient id="clg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--a)"/><stop offset="1" style="stop-color:var(--b)"/></linearGradient></defs><path d="M24 40h70v34a32 32 0 0 1-32 32h-6a32 32 0 0 1-32-32z" fill="url(#clg)"/><path d="M94 48h6a14 14 0 0 1 0 28h-8" stroke="url(#clg)" stroke-width="9" fill="none" stroke-linecap="round"/><circle cx="59" cy="66" r="10" fill="var(--bg)"/><rect x="54" y="66" width="10" height="16" rx="3" fill="var(--bg)"/></svg></div>
+    <div class="float-card fc1"><b>🎮 noteboom</b><small>Jogando Minecraft · 1.21</small></div>
+    <div class="float-card fc2"><b>📊 Qual jogo hoje?</b><small>Roblox 62% · Minecraft 38%</small></div>
+    <div class="float-card fc3"><b>🎬 Cupgine</b><small>animação enviada</small></div></div>
 </main>
-<section class="show">
+<section class="feats" id="recursos"><h2>Tudo que um grupo de amigos <span>precisa</span></h2>
+  <div class="fgrid"><div class="fcard"><span class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></span><b>Calls e overlay no jogo</b><p>Voz, vídeo e tela. Uma janelinha por cima do Roblox ou Minecraft para mutar sem sair do jogo.</p></div><div class="fcard"><span class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></span><b>Servidores do seu jeito</b><p>Categorias, emojis próprios, enquetes, reações, mensagens agendadas e qualquer arquivo.</p></div><div class="fcard"><span class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1 0 2-.8 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3a2 2 0 0 1 2-2h2.3A5.7 5.7 0 0 0 22 10c0-4.4-4.5-8-10-8z"/></svg></span><b>Theme Editor</b><p>Arraste e redimensione as janelas, troque cores, fontes (até as suas), fundo, CSS e JS.</p></div><div class="fcard"><span class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg></span><b>Cupgine</b><p>Anime quadro a quadro com pincéis e cores, direto no app, e mande para os amigos.</p></div><div class="fcard"><span class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg></span><b>Mini-games</b><p>Jogo da velha, xadrez e Mouse Wars — a guerra de cursores com poderes.</p></div><div class="fcard"><span class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg></span><b>Perfil que é a sua cara</b><p>Molduras animadas, adesivos, emblemas, status em balão e o modo Penetrar.</p></div><div class="fcard"><span class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><b>Atividade de verdade</b><p>Mostra o jogo com o ícone certo, a música do Spotify e o servidor do Minecraft.</p></div><div class="fcard"><span class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></span><b>Leve e sem anúncio</b><p>App de PC em Rust, modo leve para PC fraco, atualiza sozinho pelo CLAUT. Grátis.</p></div></div></section>
+<section class="show" id="temas">
   <h2>Do <span>seu jeito</span></h2>
   <p>Temas completos, papel de parede, cores e até o layout. Troque em um clique.</p>
   <div class="demo" id="demo">
@@ -146,6 +184,18 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
     <div class="lbl" id="lbl">Meia-noite</div>
     <svg class="cursor" id="cur" viewBox="0 0 24 24"><path d="M4 2l16 9-7 2-3 7z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>
   </div>
+</section>
+<section class="dl" id="baixar"><h2>Baixe <span>grátis</span></h2><p class="sub2">Mesma conta e as mesmas conversas em todo lugar.</p>
+  <div class="dgrid">
+    <a class="dcard" id="dl-win" href="#"><b>Windows</b><small>10 e 11 · se atualiza sozinho</small></a>
+    <a class="dcard" id="dl-and" href="#"><b>Android</b><small>APK · instale direto</small></a>
+    <a class="dcard" id="dl-lin" href="#"><b>Linux</b><small>AppImage · qualquer distro</small></a>
+    <a class="dcard" href="/app/"><b>Navegador</b><small>sem instalar nada</small></a></div></section>
+<section class="faq"><h2>Perguntas</h2>
+  <details><summary>É de graça mesmo?</summary><p>Sim. Sem anúncio e sem assinatura.</p></details>
+  <details><summary>Funciona em PC fraco?</summary><p>Sim. O app de PC é feito em Rust (bem mais leve que Electron) e tem o modo Leve, que desliga os efeitos pesados sozinho.</p></details>
+  <details><summary>O Windows disse "O Windows protegeu o computador"</summary><p>Clique em <b>Mais informações → Executar assim mesmo</b>. Isso aparece com apps novos que ainda não têm assinatura paga.</p></details>
+  <details><summary>Como os números das versões funcionam?</summary><p>Cada versão tem um número e uma comida. Quanto mais doce a comida, maior a atualização: Cakepop foi enorme, Energy Bar é média, Pipoca é só correção.</p></details>
 </section>
 <footer>© Cuplock</footer>
 <div class="note" id="note"></div>
@@ -183,6 +233,7 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
   const andBtn = document.getElementById("android");
   if (apk) { andBtn.href = apk.url; andBtn.style.display = ""; }
   const isLinux = /Linux/i.test(navigator.userAgent) && !isAndroid;
+  btn.dataset.win = btn.href;
   if (isLinux && lin) {
     btn.href = lin.url;
     meta.innerHTML = `Linux (AppImage) · versão ${lin.v}${lin.size ? ` · ${(lin.size / 1048576).toFixed(1)} MB` : ""} · grátis — depois de baixar: <code>chmod +x</code> e abra`;
@@ -194,6 +245,13 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;color:var(--fg
     meta.textContent = `Versão ${version}${size ? ` · ${(size / 1048576).toFixed(1)} MB` : ""} · Windows 10 e 11${apk ? " · Android" : ""}${lin ? " · Linux" : ""} · grátis`;
   }
 
+  const lbl = v => { const [a, b] = String(v).split("."), k = +b ? `${+a}.${+b}` : String(+a), F = { "5": "Cakepop", "5.5": "Energy Bar", "6": "Pipoca", "7": "Brigadeiro", "8": "Pão de Queijo" }; return +a >= 5 ? `Cuplock ${k}${F[k] ? ` (${F[k]})` : ""}` : `Cuplock ${v}`; };
+  if (cmp(version, "5.0.0") >= 0) document.getElementById("vtag").textContent = lbl(version);
+  meta.textContent = meta.textContent.replace(/^Versão [\d.]+/, lbl(version));
+  const dw = document.getElementById("dl-win"), da = document.getElementById("dl-and"), dlin = document.getElementById("dl-lin");
+  dw.href = btn.getAttribute("href"); if (isLinux || isAndroid) dw.href = document.querySelector("#download").dataset.win || dw.href;
+  if (apk) da.href = apk.url; else da.classList.add("off");
+  if (lin) dlin.href = lin.url; else dlin.classList.add("off");
   const note = document.getElementById("note");
   const isWin = /Windows/i.test(navigator.userAgent), isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
   andBtn.addEventListener("click", () => {

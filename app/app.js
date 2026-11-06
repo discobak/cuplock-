@@ -4,7 +4,7 @@
    Supabase: contas (e-mail + senha), banco e tempo real.
    ============================================================ */
 
-const VERSION = "5.0.0";
+const VERSION = "5.5.0";
 const DEFAULT_PREFS = {
   theme: "meianoite", accent: "#a78bfa", accent2: "#f472b6", wallpaper: "aurora", wallUrl: "", freeLayout: false, layout: {}, wallBlur: 0, wallDim: 30, wallAnim: true,
   panelOpacity: 78, glass: true, radius: 20, gap: 10, font: "jakarta", fontSize: 15, msgStyle: "bubbles", avatarShape: "squircle",
@@ -28,6 +28,10 @@ const THEMES = {
   dracula: { name: "Drácula", bg0: "#191a21", bg1: "#282a36", bg3: "#343746", bg4: "#44475a", fg: "#f8f8f2", fg2: "#c3c6d4", fg3: "#7c80a0" },
   matcha: { name: "Matcha", light: true, bg0: "#e7eedd", bg1: "#fbfdf6", bg3: "#eef4e5", bg4: "#d9e6c9", fg: "#1f2a16", fg2: "#4c5e3c", fg3: "#84957a" },
   pessego: { name: "Pêssego", light: true, bg0: "#f8e6dc", bg1: "#fffaf6", bg3: "#fbede5", bg4: "#f2d6c6", fg: "#2b1a12", fg2: "#7a5443", fg3: "#a8877a" },
+  cafe: { name: "Café", bg0: "#140d08", bg1: "#1e140d", bg3: "#2b1d13", bg4: "#3a281b", fg: "#f6ece2", fg2: "#cdb39c", fg3: "#8f7663" },
+  lavanda: { name: "Lavanda", light: true, bg0: "#ece6f7", bg1: "#fcfaff", bg3: "#f2edfb", bg4: "#e0d6f2", fg: "#211a33", fg2: "#5d5278", fg3: "#9187a8" },
+  meianoiteazul: { name: "Céu noturno", bg0: "#060b1a", bg1: "#0c1428", bg3: "#141f3a", bg4: "#1e2b4f", fg: "#e8eeff", fg2: "#a6b5df", fg3: "#6576a6" },
+  carbono: { name: "Carbono", bg0: "#050505", bg1: "#0f0f10", bg3: "#18181a", bg4: "#232326", fg: "#f2f2f2", fg2: "#a8a8ad", fg3: "#6b6b70" },
   // temas especiais: mudam o visual inteiro (kit = preferências aplicadas junto)
   aero: { name: "Frutiger Aero", special: true, light: true, bg0: "#bfe8fb", bg1: "#f2fbff", bg3: "#e3f6ff", bg4: "#c4ebfb", fg: "#0b3550", fg2: "#2d6a8a", fg3: "#6a9bb5",
     preview: "linear-gradient(180deg,#8fd8ff 0%,#d8f4ff 45%,#5fd0ea 60%,#0f8fc2 100%)",
@@ -36,6 +40,12 @@ const THEMES = {
     preview: "linear-gradient(90deg,#1e2124 0 18%,#2e3136 18% 45%,#36393e 45%)",
     kit: { accent: "#7289da", accent2: "#7289da", wallpaper: "liso", wallAnim: false, wallBlur: 0, wallDim: 0, glass: false, panelOpacity: 100, radius: 4, gap: 0, font: "opensans", msgStyle: "classic", avatarShape: "round" } },
 };
+THEMES.neontokyo = { name: "Neon Tokyo", special: true, bg0: "#05040c", bg1: "#0d0a1c", bg3: "#17122e", bg4: "#221a42", fg: "#f4f1ff", fg2: "#b8afe0", fg3: "#7a6fa8",
+  preview: "linear-gradient(160deg,#05040c 0 35%,#ff2bd6 35% 50%,#00e5ff 50% 65%,#0d0a1c 65%)",
+  kit: { accent: "#ff2bd6", accent2: "#00e5ff", wallpaper: "nebulosa", wallAnim: true, wallBlur: 0, wallDim: 20, glass: true, panelOpacity: 70, radius: 6, gap: 8, font: "grotesk", msgStyle: "bubbles", avatarShape: "squircle" } };
+THEMES.vaporwave = { name: "Vaporwave", special: true, bg0: "#1a0f2e", bg1: "#24163f", bg3: "#33205a", bg4: "#432b73", fg: "#fff1fb", fg2: "#e0b6ea", fg3: "#a682b8",
+  preview: "linear-gradient(180deg,#ff71ce 0%,#b967ff 45%,#01cdfe 100%)",
+  kit: { accent: "#ff71ce", accent2: "#01cdfe", wallpaper: "malha", wallAnim: true, wallBlur: 0, wallDim: 10, glass: true, panelOpacity: 65, radius: 0, gap: 12, font: "mono", msgStyle: "classic", avatarShape: "squircle" } };
 THEMES.natal = { name: "Natal", special: true, bg0: "#0b1a14", bg1: "#10241b", bg3: "#183526", bg4: "#214632", fg: "#f4fbf6", fg2: "#b9d8c4", fg3: "#78a08a",
   preview: "linear-gradient(160deg,#c1121f 0 30%,#0b3d2a 30% 70%,#f4fbf6 70%)",
   kit: { accent: "#e63946", accent2: "#2a9d8f", wallpaper: "natal", wallAnim: true, wallBlur: 0, wallDim: 10, glass: true, panelOpacity: 80, radius: 18, gap: 10, font: "nunito", msgStyle: "bubbles", avatarShape: "round" } };
@@ -175,7 +185,7 @@ S = {
 const uid = () => S.session?.user?.id;
 const dmId = (a, b) => "dm:" + [a, b].sort().join(":");
 const cidFilter = cid => cid.startsWith("dm:") ? { dm_key: cid.slice(3) } : { channel_id: cid };
-const norm = m => ({ id: m.id, channel: m.channel_id || "dm:" + m.dm_key, author: m.bot_id ? "bot:" + m.bot_id : m.author, realAuthor: m.author, content: m.content, attachment: m.attachment || null, reply_to: m.reply_to || null, ts: Date.parse(m.created_at), created: m.created_at });
+const norm = m => ({ id: m.id, channel: m.channel_id || "dm:" + m.dm_key, author: m.bot_id ? "bot:" + m.bot_id : m.author, realAuthor: m.author, content: m.content, attachment: m.attachment || null, reply_to: m.reply_to || null, poll: m.poll || null, ts: Date.parse(m.created_at), created: m.created_at });
 const normServer = s => ({ ...s, members: (s.members || []).map(m => m.user_id), channels: (s.channels || []).sort((a, b) => a.created_at.localeCompare(b.created_at)) });
 
 function applyPrefs() {
@@ -634,7 +644,7 @@ function renderChrome() {
         <a class="item ${["feed", "post"].includes(r.name) ? "on" : ""}" href="/feed" data-link onclick="closeNav()"><span class="hash">${I("waves", 19)}</span><span class="grow">Feed <span class="muted" style="font-weight:500">(Cupdive)</span></span>${FEED.fresh.length ? `<span class="incall" style="color:var(--accent)">${FEED.fresh.length}</span>` : ""}</a>
         <a class="item" href="#" onclick="event.preventDefault();openAnnouncements();closeNav()"><span class="hash">${I("megaphone", 18)}</span><span class="grow">Anúncios</span></a>
         ${isStaff() ? `<a class="item ${r.name === "admin" ? "on" : ""}" href="/admin" data-link onclick="closeNav()"><span class="hash">${I("shield", 18)}</span><span class="grow">Painel da ${isOwner() ? "owner" : "staff"}</span></a>` : ""}
-        ${S.prefs.devMode ? `<a class="item ${r.name === "bots" ? "on" : ""}" href="/bots" data-link onclick="closeNav()"><span class="hash">${I("bot", 19)}</span><span class="grow">Meus bots</span></a>` : ""}
+        <button class="item ${["bots", "cupgine"].includes(r.name) ? "on" : ""}" onclick="openAppsMenu(event)"><span class="hash">${I("layout", 19)}</span><span class="grow">Apps</span></button>
         <a class="item ${r.name === "discover" ? "on" : ""}" href="/discover" data-link onclick="closeNav()"><span class="hash">${ICON.compass.replace("<svg", '<svg width="19"')}</span><span class="grow">Explorar</span></a>
         <div class="side-label"><span>Conversas</span></div>
         ${dmList.length ? dmList.map(id => { const u = S.users[id], c = dmId(me, id); return `<a class="item ${isBff(id) ? "bff" : ""} ${r.params.uid === id ? "on" : ""} ${S.unread.has(c) && r.params.uid !== id ? "unread" : ""}" style="${bffStyle(id)}" href="/dm/${id}" data-link onclick="closeNav()">${avatar(u)}<span class="grow">${uname(u)}<span class="sub">${activityLine(u) || statusText(u)}</span></span></a>`; })
@@ -690,7 +700,7 @@ async function renderChat(main) {
       <div id="callslot"></div>
       <div class="content" id="scroller"><div class="chat" id="chat" data-cid="${esc(cid)}"><div class="empty"><div class="muted">Carregando mensagens…</div></div></div></div>
       <div class="composer"><div id="replybar" class="replybar" style="display:none"></div><div id="pending" class="pending" style="display:none"></div><div class="composer-box">
-        <button class="icon-btn attach-btn" title="Anexar foto, vídeo ou áudio" onclick="pickFile(ATTACH_ACCEPT,true).then(addFiles)">${I("paperclip", 17)}</button>
+        <button class="icon-btn attach-btn plus-btn" title="Mais" onclick="openPlusMenu(event)">${ICON.plus}</button>
         <textarea id="input" rows="1" maxlength="2000" placeholder="${esc(placeholder)}" autocomplete="off"></textarea>
         <button class="icon-btn" title="GIFs" onclick="openGifPicker(event)">${I("gif", 20)}</button>
         <button class="icon-btn" title="Emojis" onclick="openEmojiPicker(event)">${I("smile", 19)}</button>
@@ -988,13 +998,12 @@ function profileCard(u, actions) {
   const me = u.id === uid();
   const shared = S.servers.filter(s => s.members.includes(u.id) && !me);
   return h`<div class="profile-card" style="max-width:600px">${stickersHtml(u)}<div class="b" style="${bannerCss(u)}"></div><div class="c">
-    <div style="display:flex;justify-content:space-between;align-items:flex-end">${avatar(u, "xl")}
+    <div style="display:flex;justify-content:space-between;align-items:flex-end"><div class="pav">${avatar(u, "xl")}${statusBubble(u)}</div>
       ${actions && !me ? `<div style="display:flex;gap:8px;padding-bottom:6px">${S.friends.includes(u.id) ? "" : `<button class="btn ghost sm" onclick="addFriend('${esc(u.username)}').then(render).catch(e=>toast(e.message))">Adicionar amigo</button>`}<a class="btn sm" href="/dm/${u.id}" data-link>Mensagem</a></div>` : ""}</div>
-    <h2 style="margin-top:8px">${uname(u)}${roleBadge(u)}</h2><div class="pronouns">@${esc(u.username)}${u.pronouns ? ` · ${esc(u.pronouns)}` : ""}</div>
+    <h2 style="margin-top:8px">${uname(u)}</h2><div class="pline"><span class="pronouns">${esc(u.username)}${u.pronouns ? ` • ${esc(u.pronouns)}` : ""}</span>${badgesHtml(u)}</div>
     <div class="muted small">${statusText(u)}${platBadge(u)}</div>
-    ${u.custom_status || u.status_emoji ? `<div class="cstatus">${esc(u.status_emoji || "")} ${emojify(esc(u.custom_status || ""))}</div>` : ""}
     ${activityCard(u)}
-    ${u.bio ? `<div class="side-label" style="padding-left:0">Sobre mim</div><div class="text">${md(u.bio)}</div>` : ""}
+    ${u.bio ? `<div class="side-label" style="padding-left:0">Sobre mim</div><div class="text">${md(u.bio)}</div>` : ""}${extraSlot(u)}
     ${shared.length ? `<div class="side-label" style="padding-left:0">Servidores em comum — ${shared.length}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${shared.map(s => `<a class="btn ghost sm" href="/server/${s.id}" data-link>${okUrl(s.icon_url) ? srvIcon(s, "tiny") : esc(s.icon)} ${esc(s.name)}</a>`).join("")}</div>` : ""}
   </div></div>`;
 }
@@ -1004,9 +1013,9 @@ function profilePopout(e, id) {
   if (u.isBot) return toast(`${u.username} é um bot feito por ${dname(S.users[u.botOwner]) || "alguém"}.`);
   const me = u.id === uid();
   showCtx(e, `<div style="width:300px;margin:-6px"><div class="profile-card" style="border:0">${stickersHtml(u)}<div class="b" style="height:70px;${bannerCss(u)}"></div><div class="c" style="padding:0 14px 14px">
-    ${avatar(u, "xl")}<h3 style="margin-top:6px">${uname(u)}${roleBadge(u)}</h3><div class="pronouns">@${esc(u.username)}${u.pronouns ? ` · ${esc(u.pronouns)}` : ""}</div>
-    ${u.custom_status || u.status_emoji ? `<div class="cstatus small">${esc(u.status_emoji || "")} ${emojify(esc(u.custom_status || ""))}</div>` : `<div class="muted small">${statusLabel[effStatus(u)]}</div>`}
-    ${activityCard(u)}${u.bio ? `<p class="small text" style="margin-top:10px">${md(u.bio)}</p>` : ""}
+    <div class="pav">${avatar(u, "xl")}${statusBubble(u)}</div><h3 style="margin-top:6px">${uname(u)}</h3><div class="pline"><span class="pronouns">${esc(u.username)}${u.pronouns ? ` • ${esc(u.pronouns)}` : ""}</span>${badgesHtml(u)}</div>
+    <div class="muted small">${statusText(u)}${platBadge(u)}</div>
+    ${activityCard(u)}${u.bio ? `<p class="small text" style="margin-top:10px">${md(u.bio)}</p>` : ""}${extraSlot(u)}
     <div style="display:flex;gap:6px;margin-top:12px">${me ? `<a class="btn sm ghost" style="flex:1" href="/settings/profile" data-link>Editar perfil</a>` : `<a class="btn sm" style="flex:1" href="/dm/${u.id}" data-link>Mensagem</a><a class="btn sm ghost" href="/user/${u.id}" data-link>Perfil</a>`}</div>
   </div></div></div>`);
 }

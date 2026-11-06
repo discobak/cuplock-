@@ -113,10 +113,10 @@ async function clautPing() {
 }
 
 // ================================================================ termos de uso e privacidade
-const TERMS_VERSION = 1;
+const TERMS_VERSION = 2;
 const TERMS_TXT = `
 ## Termos de Uso do Cuplock
--# Última atualização: novembro de 2026
+-# Última atualização: 6 de novembro de 2026 (Cuplock 5.5 — Energy Bar)
 
 **1. O que é.** O Cuplock é um app de mensagens, chamadas e feed para conversar com amigos e comunidades. Ao usar, você concorda com estes termos.
 
@@ -139,13 +139,19 @@ const TERMS_TXT = `
 
 **7. Sem garantia.** O Cuplock é oferecido "como está". Pode ter falhas, ficar fora do ar ou mudar funções. Faça backup do que for importante.
 
-**8. Mudanças.** Se estes termos mudarem, o app avisa e pede para você aceitar de novo.
+**8. Enquetes, mensagens agendadas e apps.** Enquetes mostram quantos votaram em cada opção para quem está na conversa. Mensagens agendadas ficam guardadas até a hora de sair e são enviadas em seu nome. O que você cria no Cupgine é seu; ao enviar, vale como qualquer outro arquivo.
+
+**9. Arquivos.** Você pode enviar qualquer tipo de arquivo (até o limite do app). É proibido enviar vírus, programas maliciosos ou arquivos de outras pessoas sem permissão.
+
+**10. Mudanças.** Se estes termos mudarem, o app avisa e pede para você aceitar de novo.
 
 ## Política de Privacidade
 
 **O que guardamos:** nome de usuário, e-mail, foto e perfil; mensagens, posts, reações e arquivos que você envia; servidores e amigos; preferências do app; quando você aceitou estes termos.
 
 **O que o app usa enquanto está aberto:** status online, plataforma (PC, celular ou navegador), versão do app e, se você ligar, o jogo ou app que está usando (detectado no seu PC — a lista de programas não sai do seu computador, só o nome do jogo reconhecido).
+
+**Modo Penetrar (opcional):** se você ligar, pode adicionar nome real, idade, religião, cidade, aniversário e links. Você escolhe quem vê (todo mundo, só amigos ou só você), pode apagar quando quiser, e nada disso é obrigatório. Religião é um dado sensível pela LGPD — só preencha se quiser mostrar.
 
 **Chamadas:** voz, vídeo e tela vão direto entre as pessoas da call (ou por um servidor TURN que só repassa os dados). Não gravamos chamadas.
 
